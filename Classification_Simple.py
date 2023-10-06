@@ -1,0 +1,211 @@
+#Readme
+#pip install kaggle
+#pip install -U scikit-learn
+#pip install Pillow
+#pip install matplotlib
+#pip install pandas
+
+#FOR MAC: watch Readme
+
+# STEP 0 : Import Librairies
+import os
+import shutil
+import re
+import random
+import tensorflow as tf
+import pandas as pd
+import numpy as np
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from sklearn.model_selection import train_test_split
+from CI_ai_lib import show_result, \
+						count_files_with_word, \
+						move_files_with_word , \
+						organize_files_by_labels,\
+						create_folders_for_labels,\
+						split_files, \
+						make_predictions, \
+						plotloss
+
+#---------------------------------------
+#		META PARAMETERS
+#---------------------------------------
+BATCH_SIZE 	= 32
+img_height 	= 150
+img_width 	= 150
+EPOCHS 		= 2
+splitting 	= 0.7 # How do we want to split our training and validation set
+
+# ------------------------------- FUNCTIONS -----------------------------
+
+
+# ------------------------------- CODE -----------------------------
+
+#---------------------------------------
+# STEP 1: Data Loading 
+#---------------------------------------
+# download data
+#kaggle competitions download -c dogs-vs-cats
+
+# get info about our data 
+dataset_dir = 'Dataset' #chemin_vers_votre_repertoire
+DATASET_DIR = os.path.join(dataset_dir, 'train')
+
+# Check if we find our data
+print("number of training features:\t", len(os.listdir('Dataset/train')))
+print("number of testing features:\t", 	len(os.listdir('Dataset/test1')))
+
+# Verify the number of dog and cat image
+#---- 1. It could happen that whe have wrong label images 
+#---- 2. Do we have same number of images for dog and cats?
+#---- 3. How changing the number of dog images will affect the accuracy? 
+nbr_dog = count_files_with_word(DATASET_DIR, "dog")
+nbr_cat = count_files_with_word(DATASET_DIR, "cat")
+print(f"Number of images labeld as 'dog' in dataset : {nbr_dog}")
+print(f"Number of images labeld as 'cat' in dataset : {nbr_cat}")
+
+#---------------------------------------
+# STEP 2 : SPLIT TRAINING SET AND VALIDATION SET
+#---------------------------------------
+
+labels 				= ['dog', 'cat'] #labels that where are working on (becarefull, be sure that their is no error or if it unsupervised)
+base_directory 		= '.' #path of the super folder
+initial_directory 	= 'Dataset/train'	#Where are initially the data
+final_directory 	= '.'	#where do we want to create the folders containing our set for train and validation
+
+
+# 1 - Create folders for Training_set and validation_set and all folders intricated by the labels for each feature 
+create_folders_for_labels(labels, base_directory)
+
+
+# 2 - Create a folders for each feature containing all images labeled as it (here dog and cat folders)
+organize_files_by_labels(labels, initial_directory, final_directory)
+
+
+# 3 - Split the training_set and the validation_set for each label (here dog and cats)
+split_files("dog", "Training_set/dog", "Validation_set/dog", splitting)
+split_files("cat", "Training_set/cat", "Validation_set/cat", splitting)
+
+#-- To verify : 
+print("nombre de dog en training:", len(os.listdir('Training_set/dog/')))
+print("nombre de cat en training:", len(os.listdir('Training_set/cat/')))
+print("nombre de dog en validation:",  len(os.listdir('Validation_set/dog/')))
+print("nombre de cat en testing:",  len(os.listdir('Validation_set/cat/')))
+
+
+#---------------------------------------
+# STEP 2 : DATA AUGMENTATION
+#---------------------------------------
+
+# Préparation des données sans augmentation
+train_datagen = ImageDataGenerator(rescale=1.0/255.) #Because here rescale = 1.0, it means that we are not doing data augmentation for the moment
+validation_datagen = ImageDataGenerator(rescale=1.0/255.)
+
+
+
+#---------------------------------------
+# STEP 3 : ASSIGN TRAIN_SET AND VALIDATION_SET
+#---------------------------------------
+TRAINING_DIR = "Training_set/"
+train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_train,
+                                                    batch_size=BATCH_SIZE,
+                                                    class_mode='binary',
+                                                    target_size=(img_height, img_width),
+                                                    seed=0)
+
+
+VALIDATION_DIR = "Validation_set/"
+validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, #X_val,y_val,
+                                                              batch_size=BATCH_SIZE,
+                                                              class_mode='binary',
+                                                              target_size=(img_height, img_width),
+                                                              shuffle=False)
+
+nb_train_images = len(os.listdir('Training_set/dog/')) + len(os.listdir('Training_set/cat/'))
+nb_validation_images= len(os.listdir('Validation_set/dog/')) + len(os.listdir('Validation_set/cat/'))
+print("\nnumber of images in the Training_set:", nb_train_images)
+print("number of images in the Validation_set:", nb_validation_images)
+
+
+#---------------------------------------
+# STEP 3 : MODEL DESIGN
+#---------------------------------------
+
+# Création du modèle
+model = Sequential()
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
+model.add(MaxPooling2D(2, 2))
+#model.add(Conv2D(64, (3, 3), activation='relu'))
+#model.add(MaxPooling2D(2, 2))
+#model.add(Conv2D(128, (3, 3), activation='relu'))
+#model.add(MaxPooling2D(2, 2))
+model.add(Flatten())
+#model.add(Dense(512, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+
+
+
+#---------------------------------------
+# STEP 4 : MODEL VIZUALISATION 
+#---------------------------------------
+model.summary()
+
+#---------------------------------------
+# STEP 5 : MODEL COMPILING
+#---------------------------------------
+model.compile(optimizer='adam',loss='binary_crossentropy', metrics=['acc'])
+
+
+
+#---------------------------------------
+# STEP 6 : MODEL TRAINING
+#---------------------------------------
+# Entraînement du modèle
+history = model.fit(train_generator,
+                    epochs=EPOCHS,
+                    batch_size=BATCH_SIZE,
+                    steps_per_epoch=nb_train_images//BATCH_SIZE, # 2000 images = batch_size * steps nb_images_train/batch_size
+                    validation_data=validation_generator,
+                    validation_steps=nb_validation_images//BATCH_SIZE, # batch Il faudra remplacer par
+                    )
+
+show_result(history)
+plotloss(history)
+
+#---------------------------------------
+# STEP 7 : MODEL EVALUATION
+#---------------------------------------
+evaluation = model.evaluate(validation_generator)
+print("Loss on validation set:", evaluation[0])
+print("Accuracy on validation set:", evaluation[1])
+
+#---------------------------------------
+# STEP 8 : MODEL PREDICTION
+#---------------------------------------
+
+make_predictions(model,test_directory = 'Dataset/test1', output_csv = 'predictions.csv',img_height = img_height, img_width = img_width) 
+
+#---------------------------------------
+# STEP 9 : MODEL SAVING
+#---------------------------------------
+# Sauvegarde du modèle (optionnelle)
+model.save('model_dogs_vs_cats_no_augmentation.h5')
+
+
+
+"""
+# ========== DATA AUGMENTATION
+# Préparation des données avec augmentation des images (data augmentation)
+train_data_generator = ImageDataGenerator(
+    rescale=1.0 / 255.0,  # Mise à l'échelle des pixels entre 0 et 1
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+"""
