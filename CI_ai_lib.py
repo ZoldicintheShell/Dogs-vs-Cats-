@@ -117,7 +117,7 @@ def split_files(source_directory, destination_directory_1, destination_directory
         dst = os.path.join(destination_directory_2, file_name)
         shutil.move(src, dst)
 
-def make_predictions(model, test_directory, output_csv,img_height, img_width):
+def make_predictions(model, test_directory, output_csv, img_height, img_width):
     # Créez une liste pour stocker les résultats
     results = []
 
@@ -130,13 +130,19 @@ def make_predictions(model, test_directory, output_csv,img_height, img_width):
         img = np.expand_dims(img, axis=0)  # Ajoutez une dimension pour le lot (batch)
 
         # Faites la prédiction
-        prediction = model.predict(img)[0][0]  # Obtenez la valeur de prédiction (0 ou 1)
+        prediction = model.predict(img)[0][0]  # Obtenez la valeur de prédiction (entre 0 et 1)
 
         # Obtenez l'ID à partir du nom du fichier en supprimant l'extension
         image_id = os.path.splitext(filename)[0]
 
+        # Mappez la prédiction à 1 (dog) ou 0 (cat)
+        if prediction >= 0.5:
+            label = 1  # (dog)
+        else:
+            label = 0  # (cat)
+
         # Ajoutez les résultats à la liste
-        results.append({'id': image_id, 'labels': int(round(prediction))})
+        results.append({'id': image_id, 'labels': label})
 
     # Créez un DataFrame Pandas à partir des résultats
     results_df = pd.DataFrame(results)
