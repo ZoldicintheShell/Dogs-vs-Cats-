@@ -33,11 +33,14 @@ from CI_ai_lib import show_result, \
 #---------------------------------------
 #		META PARAMETERS
 #---------------------------------------
-BATCH_SIZE 	= 32
-img_height 	= 150
-img_width 	= 150
-EPOCHS 		= 2
-splitting 	= 0.7 # How do we want to split our training and validation set
+BATCH_SIZE 		= 32
+img_height 		= 150
+img_width 		= 150
+EPOCHS 			= 2
+LEARNING_RATE 	= 0.001
+splitting 		= 0.7 # How do we want to split our training and validation set
+#label_size	#How much of the dataset we want to keep
+#opt #optimizer # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/legacy/Adam
 
 # ------------------------------- FUNCTIONS -----------------------------
 
@@ -91,6 +94,8 @@ create_folders_for_labels(labels, base_directory)
 
 # 2 - Create a folders for each feature containing all images labeled as it (here dog and cat folders)
 organize_files_by_labels(labels, initial_directory, final_directory)
+print("number of dog images in dog folder:", len(os.listdir('dog/')))
+print("number of cat images in cat folder:", len(os.listdir('cat/')))
 
 
 # 3 - Split the training_set and the validation_set for each label (here dog and cats)
@@ -164,7 +169,16 @@ model.summary()
 #---------------------------------------
 # STEP 8 : MODEL COMPILING
 #---------------------------------------
-model.compile(optimizer='adam',loss='binary_crossentropy', metrics=['acc'])
+model.compile(optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=LEARNING_RATE, 
+	#rho=0.9,
+    #momentum=0.0,
+    #epsilon=1e-07,
+    #centered=False,
+    #name='RMSprop',
+    #**kwargs
+    ),
+	loss='binary_crossentropy', 
+	metrics=['acc'])
 
 
 
