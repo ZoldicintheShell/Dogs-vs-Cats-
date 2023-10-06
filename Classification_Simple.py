@@ -27,7 +27,8 @@ from CI_ai_lib import show_result, \
 						create_folders_for_labels,\
 						split_files, \
 						make_predictions, \
-						plotloss
+						plotloss, \
+						get_image_dimensions
 
 #---------------------------------------
 #		META PARAMETERS
@@ -66,8 +67,16 @@ nbr_cat = count_files_with_word(DATASET_DIR, "cat")
 print(f"Number of images labeld as 'dog' in dataset : {nbr_dog}")
 print(f"Number of images labeld as 'cat' in dataset : {nbr_cat}")
 
+
 #---------------------------------------
-# STEP 2 : SPLIT TRAINING SET AND VALIDATION SET
+# STEP 2: KNOW MORE ABOUT OUR DATA
+#---------------------------------------
+min_width, min_height = get_image_dimensions(directory = "Dataset/test1")
+print(f"Dimension minimale en largeur (width) : {min_width}")
+print(f"Dimension minimale en hauteur (height) : {min_height}")
+
+#---------------------------------------
+# STEP 3 : SPLIT TRAINING SET AND VALIDATION SET
 #---------------------------------------
 
 labels 				= ['dog', 'cat'] #labels that where are working on (becarefull, be sure that their is no error or if it unsupervised)
@@ -96,7 +105,7 @@ print("nombre de cat en testing:",  len(os.listdir('Validation_set/cat/')))
 
 
 #---------------------------------------
-# STEP 2 : DATA AUGMENTATION
+# STEP 4 : DATA AUGMENTATION
 #---------------------------------------
 
 # Préparation des données sans augmentation
@@ -106,7 +115,7 @@ validation_datagen = ImageDataGenerator(rescale=1.0/255.)
 
 
 #---------------------------------------
-# STEP 3 : ASSIGN TRAIN_SET AND VALIDATION_SET
+# STEP 5 : ASSIGN TRAIN_SET AND VALIDATION_SET
 #---------------------------------------
 TRAINING_DIR = "Training_set/"
 train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_train,
@@ -130,7 +139,7 @@ print("number of images in the Validation_set:", nb_validation_images)
 
 
 #---------------------------------------
-# STEP 3 : MODEL DESIGN
+# STEP 6 : MODEL DESIGN
 #---------------------------------------
 
 # Création du modèle
@@ -148,19 +157,19 @@ model.add(Dense(1, activation='sigmoid'))
 
 
 #---------------------------------------
-# STEP 4 : MODEL VIZUALISATION 
+# STEP 7 : MODEL VIZUALISATION 
 #---------------------------------------
 model.summary()
 
 #---------------------------------------
-# STEP 5 : MODEL COMPILING
+# STEP 8 : MODEL COMPILING
 #---------------------------------------
 model.compile(optimizer='adam',loss='binary_crossentropy', metrics=['acc'])
 
 
 
 #---------------------------------------
-# STEP 6 : MODEL TRAINING
+# STEP 9 : MODEL TRAINING
 #---------------------------------------
 # Entraînement du modèle
 history = model.fit(train_generator,
@@ -175,20 +184,20 @@ show_result(history)
 plotloss(history)
 
 #---------------------------------------
-# STEP 7 : MODEL EVALUATION
+# STEP 10 : MODEL EVALUATION
 #---------------------------------------
 evaluation = model.evaluate(validation_generator)
 print("Loss on validation set:", evaluation[0])
 print("Accuracy on validation set:", evaluation[1])
 
 #---------------------------------------
-# STEP 8 : MODEL PREDICTION
+# STEP 11 : MODEL PREDICTION
 #---------------------------------------
 
 make_predictions(model,test_directory = 'Dataset/test1', output_csv = 'predictions.csv',img_height = img_height, img_width = img_width) 
 
 #---------------------------------------
-# STEP 9 : MODEL SAVING
+# STEP 12 : MODEL SAVING
 #---------------------------------------
 # Sauvegarde du modèle (optionnelle)
 model.save('model_dogs_vs_cats_no_augmentation.h5')
