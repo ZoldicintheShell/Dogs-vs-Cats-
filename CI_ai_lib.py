@@ -5,6 +5,7 @@ import random
 import tensorflow as tf
 import pandas as pd
 import numpy as np
+from PIL import Image
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
@@ -14,6 +15,33 @@ from sklearn.model_selection import train_test_split
 
 import matplotlib.image  as mpimg
 import matplotlib.pyplot as plt
+
+
+def get_image_dimensions(directory):
+    # Initialisez les dimensions minimales avec des valeurs élevées
+    min_width = float('inf')
+    min_height = float('inf')
+
+    # Parcourez les fichiers dans le répertoire
+    for filename in os.listdir(directory):
+        # Vérifiez si le fichier est une image (vous pouvez ajouter plus d'extensions si nécessaire)
+        if filename.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+            # Chemin complet du fichier image
+            image_path = os.path.join(directory, filename)
+
+            # Ouvrez l'image avec PIL
+            img = Image.open(image_path)
+
+            # Obtenez les dimensions de l'image
+            width, height = img.size
+
+            # Mettez à jour les dimensions minimales si nécessaire
+            if width < min_width:
+                min_width = width
+            if height < min_height:
+                min_height = height
+
+    return min_width, min_height
 
 
 def count_files_with_word(directory, word):
