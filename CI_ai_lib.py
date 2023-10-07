@@ -11,6 +11,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
 #%matplotlib inline
 
 import matplotlib.image  as mpimg
@@ -75,7 +76,7 @@ def move_files_with_word(source_directory, target_directory, word):
 	    if re.match(word_pattern, filename):
 	        # Déplacement du fichier vers le répertoire cible
 	        target_file_path = os.path.join(target_subdirectory, filename)
-	        shutil.move(source_file_path, target_file_path)
+	        shutil.copy(source_file_path, target_file_path)
 	        print(f"Fichier déplacé : {filename} vers {target_subdirectory}")
 
 
@@ -100,7 +101,7 @@ def organize_files_by_labels(labels, initial_directory, final_directory):
             if label in file:
                 src = os.path.join(initial_directory, file)
                 dst = os.path.join(label_dir, file)
-                shutil.move(src, dst)
+                shutil.copy(src, dst)
 
 
 def create_folders_for_labels(labels, base_directory):
@@ -137,13 +138,13 @@ def split_files(source_directory, destination_directory_1, destination_directory
     for file_name in files[:num_files_1]:
         src = os.path.join(source_directory, file_name)
         dst = os.path.join(destination_directory_1, file_name)
-        shutil.move(src, dst)
+        shutil.copy(src, dst)
 
     # Déplacez les fichiers restants dans le deuxième sous-répertoire
     for file_name in files[num_files_1:]:
         src = os.path.join(source_directory, file_name)
         dst = os.path.join(destination_directory_2, file_name)
-        shutil.move(src, dst)
+        shutil.copy(src, dst)
 
 def make_predictions(model, test_directory, output_csv, img_height, img_width):
     # Créez une liste pour stocker les résultats
@@ -180,6 +181,43 @@ def make_predictions(model, test_directory, output_csv, img_height, img_width):
     # Enregistrez le DataFrame dans un fichier CSV
     results_df.to_csv(output_csv, index=False)
 
+
+
+#----------------------------------------------------------------------- EVALUATE
+def record_csv(save_history,lr,bs,opt):
+  acc = save_history.history['acc']
+  val_acc = save_history.history['val_acc']
+  loss  = save_history.history['loss']
+  val_loss  = save_history.history['val_loss']
+
+  df_acc   = pd.DataFrame(acc)
+  df_val_acc = pd.DataFrame(val_acc)
+  df_loss = pd.DataFrame(loss)
+  df_val_loss = pd.DataFrame(val_loss)
+  df_fitting_rate = df_loss/df_val_loss
+  #df_fitting_state = df_loss/df_val_loss
+
+  result = pd.concat([df_acc, df_val_acc, df_loss,df_val_loss, df_fitting_rate], axis=1, join="inner")
+  result["df_fitting_state"] = ""
+
+  result.columns = ['acc','val_acc','loss','val_loss','fitting_rate','fitting_state']
+
+  result.loc[result.fitting_rate >= float(0.8),'fitting_state']= 'Underfitting'
+  result.loc[result.fitting_rate <= float(0.4),'fitting_state']='0verfitting'
+  result.loc[(result.fitting_rate >= float(0.4)) & (result.fitting_rate <= float(0.8)),'fitting_state']='Finefitting'
+
+  result["epochs"] = result.index
+  result["epochs"] = result["epochs"]+1
+
+  result["optimizer"] = opt
+  result["learning_rate"] = lr
+  result["batchsize"] = bs
+
+  return result
+
+
+
+#----------------------------------------------------------------------- VIZUALIZE RESULTS
 def show_result(history):
 
     #-----------------------------------------------------------
@@ -234,5 +272,27 @@ def plotloss(history):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend(['Train', 'Validation', 'Accuracy'])
+    plt.savefig('train_val_acc_plot.png')
     plt.show()
     #plotloss(history)
+
+
+#----------------------------------------------------------------------- GRID SEARCH
+def grid_search_model(X_train, y_train, model, param_grid, cv=3):
+    """
+    Effectue une recherche sur une grille pour trouver les meilleurs hyperparamètres pour un modèle.
+    
+    Args:
+        X_train (numpy.ndarray): Les données d'entraînement.
+        y_train (numpy.ndarray): Les étiquettes d'entraînement.
+        model (tf.keras.Model): Le modèle à optimiser.
+        param_grid (dict): Un dictionnaire des hyperparamètres à rechercher.
+        cv (int): Le nombre de plis pour la validation croisée.
+
+    Returns:
+        Meilleur modèle après la recherche sur la grille.
+    """
+    grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='accuracy', verbose=1, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+    best_model = grid_search.best_estimator_
+    return best_model
