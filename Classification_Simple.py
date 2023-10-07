@@ -37,15 +37,22 @@ from CI_ai_lib import show_result, \
 #---------------------------------------
 #		META PARAMETERS
 #---------------------------------------
-BATCH_SIZE 		= 32
-img_height 		= 150
-img_width 		= 150
+img_height      = 150
+img_width       = 150
 channel         = 3
+
+BATCH_SIZE 		= 32
 EPOCHS 			= 2
 LEARNING_RATE 	= 0.001
 splitting 		= 0.7 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
 #opt #optimizer # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/legacy/Adam
+# ADAM, SGD, RMSprop, Adagrad, Adadelta, Nadam, FTRL, LBFGS, Rprop, SGD with Momentum
+labels              = ['dog', 'cat'] #labels that where are working on (becarefull, be sure that their is no error or if it unsupervised)
+base_directory      = '.' #path of the super folder
+initial_directory   = 'Dataset/train'   #Where are initially the data
+final_directory     = 'Experiment1' #where do we want to create the folders containing our set for train and validation
+
 
 # ------------------------------- FUNCTIONS -----------------------------
 
@@ -63,7 +70,7 @@ dataset_dir = 'Dataset' #chemin_vers_votre_repertoire
 DATASET_DIR = os.path.join(dataset_dir, 'train')
 
 # Check if we find our data
-print("number of training features:\t", len(os.listdir('Dataset/train')))
+print("number of Total images:\t", len(os.listdir('Dataset/train')))
 print("number of testing features:\t", 	len(os.listdir('Dataset/test1')))
 
 # Verify the number of dog and cat image
@@ -87,31 +94,25 @@ print(f"Dimension minimale en hauteur (height) : {min_height}")
 # STEP 3 : SPLIT TRAINING SET AND VALIDATION SET
 #---------------------------------------
 
-labels 				= ['dog', 'cat'] #labels that where are working on (becarefull, be sure that their is no error or if it unsupervised)
-base_directory 		= '.' #path of the super folder
-initial_directory 	= 'Dataset/train'	#Where are initially the data
-final_directory 	= '.'	#where do we want to create the folders containing our set for train and validation
-
-
 # 1 - Create folders for Training_set and validation_set and all folders intricated by the labels for each feature 
-create_folders_for_labels(labels, base_directory)
+create_folders_for_labels(labels, final_directory)
 
 
 # 2 - Create a folders for each feature containing all images labeled as it (here dog and cat folders)
 organize_files_by_labels(labels, initial_directory, final_directory)
-print("number of dog images in dog folder:", len(os.listdir('dog/')))
-print("number of cat images in cat folder:", len(os.listdir('cat/')))
+print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "dog"))))
+print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "cat"))))
 
 
 # 3 - Split the training_set and the validation_set for each label (here dog and cats)
-split_files("dog", "Training_set/dog", "Validation_set/dog", splitting)
-split_files("cat", "Training_set/cat", "Validation_set/cat", splitting)
+split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
+split_files(source_directory = os.path.join(final_directory, "cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/cat"), pourcentage = splitting)
 
 #-- To verify : 
-print("number of dog in training set:", len(os.listdir('Training_set/dog/')))
-print("number of cat in training set:", len(os.listdir('Training_set/cat/')))
-print("number of dog in validation set:",  len(os.listdir('Validation_set/dog/')))
-print("number of cat in validation set:",  len(os.listdir('Validation_set/cat/')))
+print("number of dog in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/dog"))))
+print("number of cat in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/cat"))))
+print("number of dog in validation set:",   len(os.listdir(os.path.join(final_directory, "Validation_set/dog"))))
+print("number of cat in validation set:",   len(os.listdir(os.path.join(final_directory, "Validation_set/cat"))))
 
 
 #---------------------------------------
@@ -127,7 +128,7 @@ validation_datagen = ImageDataGenerator(rescale=1.0/255.)
 #---------------------------------------
 # STEP 5 : ASSIGN TRAIN_SET AND VALIDATION_SET
 #---------------------------------------
-TRAINING_DIR = "Training_set/"
+TRAINING_DIR = os.path.join(final_directory, "Training_set/")
 train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_train,
                                                     batch_size=BATCH_SIZE,
                                                     class_mode='binary',
@@ -136,15 +137,15 @@ train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_trai
                                                     shuffle=False)
 
 
-VALIDATION_DIR = "Validation_set/"
+VALIDATION_DIR = os.path.join(final_directory, "Validation_set/")
 validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, #X_val,y_val,
                                                               batch_size=BATCH_SIZE,
                                                               class_mode='binary',
                                                               target_size=(img_height, img_width),
                                                               shuffle=False)
 
-nb_train_images = len(os.listdir('Training_set/dog/')) + len(os.listdir('Training_set/cat/'))
-nb_validation_images= len(os.listdir('Validation_set/dog/')) + len(os.listdir('Validation_set/cat/'))
+nb_train_images     = len(os.listdir(os.path.join(final_directory, "Training_set/dog/")))   + len(os.listdir(os.path.join(final_directory, "Training_set/cat/")))
+nb_validation_images= len(os.listdir(os.path.join(final_directory, "Validation_set/dog/"))) + len(os.listdir(os.path.join(final_directory, "Validation_set/dog/")))
 print("\nnumber of images in the Training_set:", nb_train_images)
 print("number of images in the Validation_set:", nb_validation_images)
 
@@ -173,8 +174,7 @@ model.add(Dense(1, activation='sigmoid')) # Dog or not a dog
 model.summary() #plot a summary of the model
 
 
-plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True) #plot the model
-
+plot_model(model, to_file = os.path.join(final_directory, 'model_plot.png'), show_shapes=True, show_layer_names=True) #plot the model
 
 #---------------------------------------
 # STEP 8 : MODEL COMPILING
@@ -204,8 +204,8 @@ history = model.fit(train_generator,
                     validation_steps=nb_validation_images//BATCH_SIZE, # batch Il faudra remplacer par
                     )
 
-show_result(history)
-plotloss(history)
+show_result(history, directory = final_directory)
+plotloss(history, directory = final_directory)
 
 #---------------------------------------
 # STEP 10 : MODEL EVALUATION
@@ -222,14 +222,14 @@ print(record_csv(history, LEARNING_RATE, BATCH_SIZE, 'ADAM'))
 # STEP 11 : MODEL PREDICTION
 #---------------------------------------
 
-make_predictions(model,test_directory = 'Dataset/test1', output_csv = 'predictions.csv',img_height = img_height, img_width = img_width) 
+make_predictions(model, test_directory = 'Dataset/test1', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
+
 
 #---------------------------------------
 # STEP 12 : MODEL SAVING
 #---------------------------------------
 # Sauvegarde du modèle (optionnelle)
-model.save('model_dogs_vs_cats_no_augmentation.h5')
-
+model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'))
 
 #---------------------------------------
 #       GENERATE REPORT
@@ -253,10 +253,10 @@ model.save('model_dogs_vs_cats_no_augmentation.h5')
 # STEP 13 : CLEAN MEMORY
 #---------------------------------------
 # Sauvegarde du modèle (optionnelle)
-shutil.rmtree("dog")
-shutil.rmtree("cat")
-shutil.rmtree("Training_set")
-shutil.rmtree("Validation_set")
+shutil.rmtree(os.path.join(final_directory, "dog"))
+shutil.rmtree(os.path.join(final_directory, "cat"))
+shutil.rmtree(os.path.join(final_directory, "Training_set"))
+shutil.rmtree(os.path.join(final_directory, "Validation_set"))
 
 
 """
