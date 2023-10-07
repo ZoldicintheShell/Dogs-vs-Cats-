@@ -4,6 +4,8 @@
 #pip install Pillow
 #pip install matplotlib
 #pip install pandas
+#pip install pydot
+#brew install graphviz
 
 #FOR MAC: watch Readme
 
@@ -19,6 +21,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.utils import plot_model
 from sklearn.model_selection import train_test_split
 from CI_ai_lib import show_result, \
 						count_files_with_word, \
@@ -40,7 +43,7 @@ img_width 		= 150
 channel         = 3
 EPOCHS 			= 2
 LEARNING_RATE 	= 0.001
-splitting 		= 0.1 # How do we want to split our training and validation set
+splitting 		= 0.7 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
 #opt #optimizer # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/legacy/Adam
 
@@ -105,10 +108,10 @@ split_files("dog", "Training_set/dog", "Validation_set/dog", splitting)
 split_files("cat", "Training_set/cat", "Validation_set/cat", splitting)
 
 #-- To verify : 
-print("nombre de dog en training:", len(os.listdir('Training_set/dog/')))
-print("nombre de cat en training:", len(os.listdir('Training_set/cat/')))
-print("nombre de dog en validation:",  len(os.listdir('Validation_set/dog/')))
-print("nombre de cat en validation:",  len(os.listdir('Validation_set/cat/')))
+print("number of dog in training set:", len(os.listdir('Training_set/dog/')))
+print("number of cat in training set:", len(os.listdir('Training_set/cat/')))
+print("number of dog in validation set:",  len(os.listdir('Validation_set/dog/')))
+print("number of cat in validation set:",  len(os.listdir('Validation_set/cat/')))
 
 
 #---------------------------------------
@@ -129,7 +132,8 @@ train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_trai
                                                     batch_size=BATCH_SIZE,
                                                     class_mode='binary',
                                                     target_size=(img_height, img_width),
-                                                    seed=0)
+                                                    seed=0,
+                                                    shuffle=False)
 
 
 VALIDATION_DIR = "Validation_set/"
@@ -159,14 +163,18 @@ model.add(MaxPooling2D(2, 2))
 #model.add(MaxPooling2D(2, 2))
 model.add(Flatten())
 #model.add(Dense(512, activation='relu'))
-model.add(Dense(1, activation='sigmoid'))
+model.add(Dense(1, activation='sigmoid')) # Dog or not a dog
 
 
 
 #---------------------------------------
 # STEP 7 : MODEL VIZUALISATION 
 #---------------------------------------
-model.summary()
+model.summary() #plot a summary of the model
+
+
+plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True) #plot the model
+
 
 #---------------------------------------
 # STEP 8 : MODEL COMPILING
@@ -221,6 +229,24 @@ make_predictions(model,test_directory = 'Dataset/test1', output_csv = 'predictio
 #---------------------------------------
 # Sauvegarde du modèle (optionnelle)
 model.save('model_dogs_vs_cats_no_augmentation.h5')
+
+
+#---------------------------------------
+#       GENERATE REPORT
+#---------------------------------------
+# call mew etc
+# show the number of the experiment 
+# show hyper parameters and accuracy and image size
+# show time taken
+# Show graph Architecture
+# show number of features
+# plot how many dogs and how many cats
+# plot how many features in the training set and how many in the validation set
+# shiw how many data augmentation and samples
+# plot graph of plotloss
+# plot result of record_csv
+# plot images where the code gets wrong (show_false_prediction)
+# add remarks
 
 
 #---------------------------------------
