@@ -28,7 +28,8 @@ from CI_ai_lib import show_result, \
 						split_files, \
 						make_predictions, \
 						plotloss, \
-						get_image_dimensions
+						get_image_dimensions, \
+                        record_csv
 
 #---------------------------------------
 #		META PARAMETERS
@@ -36,9 +37,10 @@ from CI_ai_lib import show_result, \
 BATCH_SIZE 		= 32
 img_height 		= 150
 img_width 		= 150
+channel         = 3
 EPOCHS 			= 2
 LEARNING_RATE 	= 0.001
-splitting 		= 0.7 # How do we want to split our training and validation set
+splitting 		= 0.1 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
 #opt #optimizer # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/legacy/Adam
 
@@ -106,7 +108,7 @@ split_files("cat", "Training_set/cat", "Validation_set/cat", splitting)
 print("nombre de dog en training:", len(os.listdir('Training_set/dog/')))
 print("nombre de cat en training:", len(os.listdir('Training_set/cat/')))
 print("nombre de dog en validation:",  len(os.listdir('Validation_set/dog/')))
-print("nombre de cat en testing:",  len(os.listdir('Validation_set/cat/')))
+print("nombre de cat en validation:",  len(os.listdir('Validation_set/cat/')))
 
 
 #---------------------------------------
@@ -149,7 +151,7 @@ print("number of images in the Validation_set:", nb_validation_images)
 
 # Création du modèle
 model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, channel)))
 model.add(MaxPooling2D(2, 2))
 #model.add(Conv2D(64, (3, 3), activation='relu'))
 #model.add(MaxPooling2D(2, 2))
@@ -200,9 +202,13 @@ plotloss(history)
 #---------------------------------------
 # STEP 10 : MODEL EVALUATION
 #---------------------------------------
+print("\nMODEL EVALUATION ------------")
+
 evaluation = model.evaluate(validation_generator)
 print("Loss on validation set:", evaluation[0])
 print("Accuracy on validation set:", evaluation[1])
+
+print(record_csv(history, LEARNING_RATE, BATCH_SIZE, 'ADAM'))
 
 #---------------------------------------
 # STEP 11 : MODEL PREDICTION
@@ -216,6 +222,15 @@ make_predictions(model,test_directory = 'Dataset/test1', output_csv = 'predictio
 # Sauvegarde du modèle (optionnelle)
 model.save('model_dogs_vs_cats_no_augmentation.h5')
 
+
+#---------------------------------------
+# STEP 13 : CLEAN MEMORY
+#---------------------------------------
+# Sauvegarde du modèle (optionnelle)
+shutil.rmtree("dog")
+shutil.rmtree("cat")
+shutil.rmtree("Training_set")
+shutil.rmtree("Validation_set")
 
 
 """
