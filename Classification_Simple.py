@@ -19,7 +19,7 @@ import pandas as pd
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Activation, BatchNormalization, Dropout
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.utils import plot_model
 from sklearn.model_selection import train_test_split
@@ -155,6 +155,11 @@ print("number of images in the Validation_set:", nb_validation_images)
 #---------------------------------------
 
 # Création du modèle
+
+
+#---DUMB-----------
+
+"""
 model = Sequential()
 model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, channel)))
 model.add(MaxPooling2D(2, 2))
@@ -165,7 +170,32 @@ model.add(MaxPooling2D(2, 2))
 model.add(Flatten())
 #model.add(Dense(512, activation='relu'))
 model.add(Dense(1, activation='sigmoid')) # Dog or not a dog
+"""
 
+#---COMPLEX-----------
+
+model=Sequential()
+
+model.add(Conv2D(32,(3,3),activation='relu',input_shape=(img_height, img_width, channel)))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+
+model.add(Conv2D(64,(3,3),activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+
+model.add(Conv2D(128,(3,3),activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+
+model.add(Flatten())
+model.add(Dense(512,activation='relu'))
+model.add(BatchNormalization())
+model.add(Dropout(0.5))
+model.add(Dense(1,activation='softmax'))
 
 
 #---------------------------------------
@@ -216,7 +246,7 @@ evaluation = model.evaluate(validation_generator)
 print("Loss on validation set:", evaluation[0])
 print("Accuracy on validation set:", evaluation[1])
 
-print(record_csv(history, LEARNING_RATE, BATCH_SIZE, 'ADAM'))
+print(record_csv(history, LEARNING_RATE, BATCH_SIZE, 'ADAM',number_of_img_train = nb_train_images , number_of_img_val = nb_validation_images))
 
 #---------------------------------------
 # STEP 11 : MODEL PREDICTION
@@ -242,9 +272,10 @@ model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'
 # show number of features
 # plot how many dogs and how many cats
 # plot how many features in the training set and how many in the validation set
-# shiw how many data augmentation and samples
+# show how many data augmentation and samples
 # plot graph of plotloss
 # plot result of record_csv
+# Show correlation graoh between all the parameters and the accuracy
 # plot images where the code gets wrong (show_false_prediction)
 # add remarks
 
