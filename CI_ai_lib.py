@@ -5,6 +5,8 @@ import random
 import tensorflow as tf
 import pandas as pd
 import numpy as np
+import matplotlib.image  as mpimg
+import matplotlib.pyplot as plt
 from PIL import Image
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
@@ -14,8 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 #%matplotlib inline
 
-import matplotlib.image  as mpimg
-import matplotlib.pyplot as plt
+
 
 
 def get_image_dimensions(directory):
@@ -80,9 +81,7 @@ def move_files_with_word(source_directory, target_directory, word):
 	        print(f"Fichier déplacé : {filename} vers {target_subdirectory}")
 
 
-import os
-import random
-import shutil
+
 #crée un fichier par label
 def organize_files_by_labels(labels, initial_directory, final_directory):
     # Crée le répertoire final s'il n'existe pas
@@ -184,7 +183,7 @@ def make_predictions(model, test_directory, output_csv, img_height, img_width):
 
 
 #----------------------------------------------------------------------- EVALUATE
-def record_csv(save_history,lr,bs,opt):
+def record_csv(save_history,lr,bs,opt,number_of_img_train , number_of_img_val ):
   acc = save_history.history['acc']
   val_acc = save_history.history['val_acc']
   loss  = save_history.history['loss']
@@ -212,13 +211,15 @@ def record_csv(save_history,lr,bs,opt):
   result["optimizer"] = opt
   result["learning_rate"] = lr
   result["batchsize"] = bs
+  result["number_of_img_train"] = number_of_img_train
+  result["number_of_img_val"] = number_of_img_val
 
   return result
 
 
 
 #----------------------------------------------------------------------- VIZUALIZE RESULTS
-def show_result(history):
+def show_result(history, directory):
 
     #-----------------------------------------------------------
     # Retrieve a list of list results on training and test data
@@ -262,37 +263,19 @@ def show_result(history):
     acc_plot.set_ylabel('Accuracy')
     acc_plot.legend()
 
-    plt.savefig('training_plot.png')
+    plt.savefig(os.path.join(directory,'training_plot.png'))
     plt.show()
 
-def plotloss(history):
+def plotloss(history, directory):
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
     plt.plot(history.history['acc'])
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend(['Train', 'Validation', 'Accuracy'])
-    plt.savefig('train_val_acc_plot.png')
+    plt.savefig(os.path.join(directory, 'train_val_acc_plot.png'))
     plt.show()
     #plotloss(history)
 
 
-#----------------------------------------------------------------------- GRID SEARCH
-def grid_search_model(X_train, y_train, model, param_grid, cv=3):
-    """
-    Effectue une recherche sur une grille pour trouver les meilleurs hyperparamètres pour un modèle.
-    
-    Args:
-        X_train (numpy.ndarray): Les données d'entraînement.
-        y_train (numpy.ndarray): Les étiquettes d'entraînement.
-        model (tf.keras.Model): Le modèle à optimiser.
-        param_grid (dict): Un dictionnaire des hyperparamètres à rechercher.
-        cv (int): Le nombre de plis pour la validation croisée.
 
-    Returns:
-        Meilleur modèle après la recherche sur la grille.
-    """
-    grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='accuracy', verbose=1, n_jobs=-1)
-    grid_search.fit(X_train, y_train)
-    best_model = grid_search.best_estimator_
-    return best_model
