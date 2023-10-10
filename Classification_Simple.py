@@ -17,10 +17,13 @@ import random
 import tensorflow as tf
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+#from tensorflow.keras import layers, models
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Activation, BatchNormalization, Dropout
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.utils import plot_model
 from sklearn.model_selection import train_test_split
 from CI_ai_lib import show_result, \
@@ -40,10 +43,9 @@ from CI_ai_lib import show_result, \
 img_height      = 150
 img_width       = 150
 channel         = 3
-
-BATCH_SIZE 		= 32
+BATCH_SIZE 		= 15
 EPOCHS 			= 2
-LEARNING_RATE 	= 0.001
+LEARNING_RATE 	= 0.1
 splitting 		= 0.7 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
 #opt #optimizer # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/legacy/Adam
@@ -90,6 +92,7 @@ min_width, min_height = get_image_dimensions(directory = "Dataset/test1")
 print(f"Dimension minimale en largeur (width) : {min_width}")
 print(f"Dimension minimale en hauteur (height) : {min_height}")
 
+
 #---------------------------------------
 # STEP 3 : SPLIT TRAINING SET AND VALIDATION SET
 #---------------------------------------
@@ -120,8 +123,8 @@ print("number of cat in validation set:",   len(os.listdir(os.path.join(final_di
 #---------------------------------------
 
 # Préparation des données sans augmentation
-train_datagen = ImageDataGenerator(rescale=1.0/255.) #Because here rescale = 1.0, it means that we are not doing data augmentation for the moment
-validation_datagen = ImageDataGenerator(rescale=1.0/255.)
+train_datagen = ImageDataGenerator(rescale=1.0/255.) # Les valeurs des canaux RVB sont dans la plage [0, 255] . Ce n'est pas idéal pour un réseau neuronal ; en général, vous devriez chercher à rendre vos valeurs d'entrée petites. Ici, vous allez normaliser les valeurs pour qu'elles soient dans la plage [0, 1]
+validation_datagen = ImageDataGenerator(rescale=1.0/255.) # We should even add a normalization layer actually in Keras. normalization_layer = tf.keras.layers.Rescaling(1./255)
 
 
 
@@ -151,7 +154,7 @@ print("number of images in the Validation_set:", nb_validation_images)
 
 
 #---------------------------------------
-# STEP 6 : MODEL DESIGN
+# STEP 6 : MODEL ARCHITECTURE DESIGN
 #---------------------------------------
 
 # Création du modèle
@@ -159,22 +162,28 @@ print("number of images in the Validation_set:", nb_validation_images)
 
 #---DUMB-----------
 
-"""
+
 model = Sequential()
 model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, channel)))
 model.add(MaxPooling2D(2, 2))
 #model.add(Conv2D(64, (3, 3), activation='relu'))
 #model.add(MaxPooling2D(2, 2))
 #model.add(Conv2D(128, (3, 3), activation='relu'))
+#--
+#model.add(TimeDistributed(model, input_shape=(img_height, img_width, channel)))
+#model.add(LSTM(64, return_sequences=True))
+#model.add(multihead_attention_layer = layers.MultiHeadAttention(num_heads=8, key_dim=64))
+#--
 #model.add(MaxPooling2D(2, 2))
 model.add(Flatten())
 #model.add(Dense(512, activation='relu'))
 model.add(Dense(1, activation='sigmoid')) # Dog or not a dog
-"""
+
 
 #---COMPLEX-----------
 
-model=Sequential()
+"""
+model = Sequential()
 
 model.add(Conv2D(32,(3,3),activation='relu',input_shape=(img_height, img_width, channel)))
 model.add(BatchNormalization())
@@ -196,7 +205,7 @@ model.add(Dense(512,activation='relu'))
 model.add(BatchNormalization())
 model.add(Dropout(0.5))
 model.add(Dense(1,activation='softmax'))
-
+"""
 
 #---------------------------------------
 # STEP 7 : MODEL VIZUALISATION 
@@ -209,29 +218,59 @@ plot_model(model, to_file = os.path.join(final_directory, 'model_plot.png'), sho
 #---------------------------------------
 # STEP 8 : MODEL COMPILING
 #---------------------------------------
-model.compile(optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=LEARNING_RATE, 
-	#rho=0.9,
-    #momentum=0.0,
-    #epsilon=1e-07,
-    #centered=False,
-    #name='RMSprop',
-    #**kwargs
+model.compile(
+    optimizer = tf.keras.optimizers.legacy.RMSprop(
+        learning_rate = LEARNING_RATE, 
+    	#rho=0.9,
+        #momentum=0.0,
+        #epsilon=1e-07,
+        #centered=False,
+        #name='RMSprop',
+        #**kwargs
     ),
 	loss='binary_crossentropy', 
-	metrics=['acc'])
-
+	metrics=['acc'], #tf.keras.metrics.BinaryAccuracy()
+    #loss_weights=None,
+    #weighted_metrics=None,
+    #run_eagerly=None,
+    #steps_per_execution=None,
+    #jit_compile=None,
+    #pss_evaluation_shards=0,
+    #**kwargs
+    )
 
 
 #---------------------------------------
 # STEP 9 : MODEL TRAINING
 #---------------------------------------
-# Entraînement du modèle
-history = model.fit(train_generator,
-                    epochs=EPOCHS,
-                    batch_size=BATCH_SIZE,
-                    steps_per_epoch=nb_train_images//BATCH_SIZE, # 2000 images = batch_size * steps nb_images_train/batch_size
-                    validation_data=validation_generator,
-                    validation_steps=nb_validation_images//BATCH_SIZE, # batch Il faudra remplacer par
+
+# Callback initialization
+#This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
+earlystop = EarlyStopping(patience = 10)
+learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 2 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
+tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
+
+history = model.fit(
+    train_generator, #x, Y
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+#    verbose="auto",
+    callbacks = [earlystop,learning_rate_reduction],
+#    validation_split=0.0,
+    validation_data=validation_generator,
+#    shuffle=True,
+#    class_weight=None,
+#    sample_weight=None,
+#    initial_epoch=0,
+    steps_per_epoch=nb_train_images//BATCH_SIZE,
+    validation_steps=nb_validation_images//BATCH_SIZE,
+#    validation_batch_size=None,
+#    validation_freq=1,
+#    max_queue_size=10,
+#    workers=1,
+#    use_multiprocessing=False,
+
+
                     )
 
 show_result(history, directory = final_directory)
@@ -242,7 +281,23 @@ plotloss(history, directory = final_directory)
 #---------------------------------------
 print("\nMODEL EVALUATION ------------")
 
-evaluation = model.evaluate(validation_generator)
+evaluation = model.evaluate(validation_generator
+#    x=None,
+#    y=None,
+#    batch_size=None,
+#    verbose="auto",
+#    sample_weight=None,
+#    steps=None,
+#    callbacks=None,
+#    max_queue_size=10,
+#    workers=1,
+#    use_multiprocessing=False,
+#    return_dict=False,
+#    **kwargs
+    )
+
+
+
 print("Loss on validation set:", evaluation[0])
 print("Accuracy on validation set:", evaluation[1])
 
@@ -279,6 +334,10 @@ model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'
 # plot images where the code gets wrong (show_false_prediction)
 # add remarks
 
+# Function to create
+#def visualize_validation_results(?):
+#def visualize_train_results(?):
+
 
 #---------------------------------------
 # STEP 13 : CLEAN MEMORY
@@ -288,6 +347,11 @@ shutil.rmtree(os.path.join(final_directory, "dog"))
 shutil.rmtree(os.path.join(final_directory, "cat"))
 shutil.rmtree(os.path.join(final_directory, "Training_set"))
 shutil.rmtree(os.path.join(final_directory, "Validation_set"))
+
+
+
+
+
 
 
 """
