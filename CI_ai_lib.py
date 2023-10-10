@@ -145,6 +145,8 @@ def split_files(source_directory, destination_directory_1, destination_directory
         dst = os.path.join(destination_directory_2, file_name)
         shutil.copy(src, dst)
 
+
+#----------------------------------------------------------------------- MAKE PREDECTION
 def make_predictions(model, test_directory, output_csv, img_height, img_width):
     # Créez une liste pour stocker les résultats
     results = []
