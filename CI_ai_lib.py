@@ -218,7 +218,7 @@ def make_predictions(model, test_directory, output_csv, img_height, img_width):
 
 
 #----------------------------------------------------------------------- EVALUATE
-def record_csv(save_history,lr,bs,opt,number_of_img_train , number_of_img_val ):
+def record_csv(experiment_path,save_history,lr,bs,opt,number_of_img_train , number_of_img_val, number_of_cat, number_of_dog ):
   acc = save_history.history['acc']
   val_acc = save_history.history['val_acc']
   loss  = save_history.history['loss']
@@ -248,6 +248,12 @@ def record_csv(save_history,lr,bs,opt,number_of_img_train , number_of_img_val ):
   result["batchsize"] = bs
   result["number_of_img_train"] = number_of_img_train
   result["number_of_img_val"] = number_of_img_val
+  result["nbr_cat"] = number_of_cat
+  result["nbr_dog"] = number_of_dog
+  # saving as a CSV file
+  df = pd.DataFrame(result)
+  df.to_csv(os.path.join(experiment_path, 'experiment_recors.csv'), sep ='\t')
+
 
   return result
 
