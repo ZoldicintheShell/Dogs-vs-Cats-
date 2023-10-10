@@ -109,8 +109,10 @@ print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_d
 # 3 - Reduce the number of images in the Dataset (or not) 
 delete_random_files(folder_path = os.path.join(final_directory, "dog"), percentage_to_delete = percentage_to_delete_dog)
 delete_random_files(folder_path = os.path.join(final_directory, "cat"), percentage_to_delete = percentage_to_delete_cat)
-print("number of dog images in dog folder after dataset reduction:", len(os.listdir(os.path.join(final_directory, "dog"))))
-print("number of cat images in cat folder after dataset reduction:", len(os.listdir(os.path.join(final_directory, "cat"))))
+nbr_dog = len(os.listdir(os.path.join(final_directory, "dog")))
+nbr_cat = len(os.listdir(os.path.join(final_directory, "cat")))
+print("number of dog images in dog folder after dataset reduction:", nbr_dog)
+print("number of cat images in cat folder after dataset reduction:", nbr_cat)
 
 # 4 - Split the training_set and the validation_set for each label (here dog and cats)
 split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
@@ -315,7 +317,19 @@ evaluation = model.evaluate(validation_generator
 print("Loss on validation set:", evaluation[0])
 print("Accuracy on validation set:", evaluation[1])
 
-print(record_csv(history, LEARNING_RATE, BATCH_SIZE, 'ADAM',number_of_img_train = nb_train_images , number_of_img_val = nb_validation_images))
+# Save log of the model
+print(record_csv(experiment_path = final_directory,
+    save_history = history, 
+    lr = LEARNING_RATE, 
+    bs = BATCH_SIZE, 
+    opt='ADAM',
+    number_of_img_train = nb_train_images , 
+    number_of_img_val = nb_validation_images, 
+    number_of_cat = nbr_cat, 
+    number_of_dog = nbr_dog))
+
+
+
 
 #---------------------------------------
 # STEP 11 : MODEL PREDICTION
