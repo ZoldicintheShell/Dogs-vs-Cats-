@@ -43,10 +43,10 @@ from CI_ai_lib import show_result, \
 img_height      = 150
 img_width       = 150
 channel         = 3
-BATCH_SIZE 		= 15
-EPOCHS 			= 2
-LEARNING_RATE 	= 0.1
-splitting 		= 0.7 # How do we want to split our training and validation set
+BATCH_SIZE 		= 15 #32
+EPOCHS 			= 20 #10
+LEARNING_RATE 	= 1e-4
+splitting 		= 0.8 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
 #opt #optimizer # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/legacy/Adam
 # ADAM, SGD, RMSprop, Adagrad, Adadelta, Nadam, FTRL, LBFGS, Rprop, SGD with Momentum
@@ -162,23 +162,18 @@ print("number of images in the Validation_set:", nb_validation_images)
 
 #---DUMB-----------
 
-
+"""
 model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, channel)))
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
 model.add(MaxPooling2D(2, 2))
-#model.add(Conv2D(64, (3, 3), activation='relu'))
-#model.add(MaxPooling2D(2, 2))
-#model.add(Conv2D(128, (3, 3), activation='relu'))
-#--
-#model.add(TimeDistributed(model, input_shape=(img_height, img_width, channel)))
-#model.add(LSTM(64, return_sequences=True))
-#model.add(multihead_attention_layer = layers.MultiHeadAttention(num_heads=8, key_dim=64))
-#--
-#model.add(MaxPooling2D(2, 2))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(2, 2))
+model.add(Conv2D(128, (3, 3), activation='relu'))
+model.add(MaxPooling2D(2, 2))
 model.add(Flatten())
-#model.add(Dense(512, activation='relu'))
-model.add(Dense(1, activation='sigmoid')) # Dog or not a dog
-
+model.add(Dense(512, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+"""
 
 #---COMPLEX-----------
 
@@ -206,6 +201,20 @@ model.add(BatchNormalization())
 model.add(Dropout(0.5))
 model.add(Dense(1,activation='softmax'))
 """
+
+
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
 
 #---------------------------------------
 # STEP 7 : MODEL VIZUALISATION 
@@ -246,7 +255,7 @@ model.compile(
 
 # Callback initialization
 #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
-earlystop = EarlyStopping(patience = 10)
+earlystop = EarlyStopping(patience = 5)
 learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 2 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
 tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
 
@@ -343,10 +352,10 @@ model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'
 # STEP 13 : CLEAN MEMORY
 #---------------------------------------
 # Sauvegarde du modèle (optionnelle)
-shutil.rmtree(os.path.join(final_directory, "dog"))
-shutil.rmtree(os.path.join(final_directory, "cat"))
-shutil.rmtree(os.path.join(final_directory, "Training_set"))
-shutil.rmtree(os.path.join(final_directory, "Validation_set"))
+#shutil.rmtree(os.path.join(final_directory, "dog"))
+#shutil.rmtree(os.path.join(final_directory, "cat"))
+#shutil.rmtree(os.path.join(final_directory, "Training_set"))
+#shutil.rmtree(os.path.join(final_directory, "Validation_set"))
 
 
 
