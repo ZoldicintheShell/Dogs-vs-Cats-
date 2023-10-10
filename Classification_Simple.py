@@ -35,7 +35,7 @@ from CI_ai_lib import show_result, \
 						make_predictions, \
 						plotloss, \
 						get_image_dimensions, \
-                        record_csv
+                        record_csv, delete_random_files
 
 #---------------------------------------
 #		META PARAMETERS
@@ -44,7 +44,7 @@ img_height      = 150
 img_width       = 150
 channel         = 3
 BATCH_SIZE 		= 15 #32
-EPOCHS 			= 20 #10
+EPOCHS 			= 30 #10
 LEARNING_RATE 	= 1e-4
 splitting 		= 0.8 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
@@ -54,7 +54,7 @@ labels              = ['dog', 'cat'] #labels that where are working on (becarefu
 base_directory      = '.' #path of the super folder
 initial_directory   = 'Dataset/train'   #Where are initially the data
 final_directory     = 'Experiment1' #where do we want to create the folders containing our set for train and validation
-
+percentage_to_delete_dog = percentage_to_delete_cat = 50 # Number of cat and dog wa want to delete
 
 # ------------------------------- FUNCTIONS -----------------------------
 
@@ -106,8 +106,13 @@ organize_files_by_labels(labels, initial_directory, final_directory)
 print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "dog"))))
 print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "cat"))))
 
+# 3 - Reduce the number of images in the Dataset (or not) 
+delete_random_files(folder_path = os.path.join(final_directory, "dog"), percentage_to_delete = percentage_to_delete_dog)
+delete_random_files(folder_path = os.path.join(final_directory, "cat"), percentage_to_delete = percentage_to_delete_cat)
+print("number of dog images in dog folder after dataset reduction:", len(os.listdir(os.path.join(final_directory, "dog"))))
+print("number of cat images in cat folder after dataset reduction:", len(os.listdir(os.path.join(final_directory, "cat"))))
 
-# 3 - Split the training_set and the validation_set for each label (here dog and cats)
+# 4 - Split the training_set and the validation_set for each label (here dog and cats)
 split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
 split_files(source_directory = os.path.join(final_directory, "cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/cat"), pourcentage = splitting)
 
