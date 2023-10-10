@@ -146,6 +146,39 @@ def split_files(source_directory, destination_directory_1, destination_directory
         shutil.copy(src, dst)
 
 
+
+
+
+def delete_random_files(folder_path, percentage_to_delete):
+    if not os.path.exists(folder_path):
+        print(f"Le dossier '{folder_path}' n'existe pas.")
+        return
+
+    if percentage_to_delete < 0 or percentage_to_delete > 100:
+        print("Le pourcentage doit être compris entre 0 et 100.")
+        return
+
+    files_to_delete = []
+
+    # Liste de tous les fichiers dans le dossier 'chat'
+
+    if os.path.exists(folder_path):
+        cat_files = os.listdir(folder_path)
+
+        # Calculer le nombre de fichiers à supprimer en fonction du pourcentage
+        num_files_to_delete = int(len(cat_files) * (percentage_to_delete / 100))
+
+        # Sélectionner au hasard les fichiers à supprimer
+        files_to_delete = random.sample(cat_files, num_files_to_delete)
+
+    # Supprimer les fichiers sélectionnés
+    for file_to_delete in files_to_delete:
+        file_path = os.path.join(folder_path, file_to_delete)
+        os.remove(file_path)
+        print(f"Fichier supprimé : {file_path}")
+
+
+
 #----------------------------------------------------------------------- MAKE PREDECTION
 def make_predictions(model, test_directory, output_csv, img_height, img_width):
     # Créez une liste pour stocker les résultats
@@ -278,6 +311,31 @@ def plotloss(history, directory):
     plt.savefig(os.path.join(directory, 'train_val_acc_plot.png'))
     plt.show()
     #plotloss(history)
+
+
+#----------------------------------------------------------------------- TO IMPLEMENT
+
+"""
+def count_files_with_word(folder_path, word_to_count):
+    count = 0
+
+    # Walk through the directory tree
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            # Check if the file name contains the word_to_count
+            if word_to_count in file:
+                count += 1
+
+    return count
+
+# Example usage:
+folder_name = "Keras_Dataset"
+word_to_count = "cat"
+
+count = count_files_with_word(folder_name, word_to_count)
+print(f"Number of files containing '{word_to_count}': {count}")
+"""
+
 
 
 
