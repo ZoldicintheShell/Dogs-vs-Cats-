@@ -7,6 +7,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.image  as mpimg
 import matplotlib.pyplot as plt
+import markdown_it
+import ephem
+import datetime
 from PIL import Image
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
@@ -179,6 +182,65 @@ def delete_random_files(folder_path, percentage_to_delete):
 
 
 
+
+# know the number of the experiment
+def get_experiment_number(markdown_file_path):
+    # Fonction pour extraire le numéro d'expérience de la première ligne du fichier Markdown
+    def extract_experiment_number(markdown_content):
+        lines = markdown_content.split("\n")
+        if lines:
+            first_line = lines[0]
+            match = re.search(r"\d+", first_line)
+            if match:
+                return int(match.group())
+        return None
+
+    # Fonction pour incrémenter le numéro d'expérience dans le fichier Markdown
+    def increment_experiment_number(markdown_content):
+        experiment_number = extract_experiment_number(markdown_content)
+        if experiment_number is not None:
+            new_experiment_number = experiment_number + 1
+            updated_content = re.sub(r"\d+", str(new_experiment_number), markdown_content, count=1)
+            return updated_content
+        return markdown_content
+
+    # Lire le contenu du fichier Markdown
+    with open(markdown_file_path, "r") as file:
+        markdown_content = file.read()
+
+    # Incrémenter le numéro d'expérience et obtenir le contenu mis à jour
+    updated_content = increment_experiment_number(markdown_content)
+
+    # Enregistrer le contenu mis à jour dans le fichier Markdown
+    with open(markdown_file_path, "w") as file:
+        file.write(updated_content)
+
+    # Afficher le numéro d'expérience mis à jour
+    updated_experiment_number = extract_experiment_number(updated_content)
+    #print("Numéro d'expérience :", updated_experiment_number - 1)
+    return updated_experiment_number - 1
+
+
+
+def generate_experiment_id():
+    # Obtenez la première lettre du jour actuel (par exemple, "L" pour "Lundi")
+    current_day = datetime.datetime.now().strftime("%A")[0]
+    
+    # Obtenez l'heure actuelle au format HH (heures) et MM (minutes)
+    current_time = datetime.datetime.now().strftime("%H%M")
+    
+    # Obtenez la position actuelle de la lune
+    moon_position = ephem.Moon()
+    moon_position.compute()
+    moon_phase = int(moon_position.phase / 100)  # Obtenez la phase de la lune sous forme de nombre entier
+
+    # Créez la chaîne au format "-DHHccMM"
+    result_string = f"-{current_day}{current_time}{moon_phase:02d}"
+    
+    return result_string
+
+
+
 #----------------------------------------------------------------------- MAKE PREDECTION
 def make_predictions(model, test_directory, output_csv, img_height, img_width):
     # Créez une liste pour stocker les résultats
@@ -218,7 +280,7 @@ def make_predictions(model, test_directory, output_csv, img_height, img_width):
 
 
 #----------------------------------------------------------------------- EVALUATE
-def record_csv(experiment_path,save_history,lr,bs,opt,number_of_img_train , number_of_img_val, number_of_cat, number_of_dog ):
+def record_csv(experiment_id,experiment_path,save_history,lr,bs,opt,number_of_img_train , number_of_img_val, number_of_cat, number_of_dog ):
   acc = save_history.history['acc']
   val_acc = save_history.history['val_acc']
   loss  = save_history.history['loss']
@@ -250,9 +312,13 @@ def record_csv(experiment_path,save_history,lr,bs,opt,number_of_img_train , numb
   result["number_of_img_val"] = number_of_img_val
   result["nbr_cat"] = number_of_cat
   result["nbr_dog"] = number_of_dog
+  result["experiment_id"] = experiment_id
+
+  experiment_id = str(experiment_id)
+  filename = "experiment_n°"+experiment_id+"_records.csv"
   # saving as a CSV file
   df = pd.DataFrame(result)
-  df.to_csv(os.path.join(experiment_path, 'experiment_recors.csv'), sep ='\t')
+  df.to_csv(os.path.join(experiment_path, filename), sep =';')
 
 
   return result
