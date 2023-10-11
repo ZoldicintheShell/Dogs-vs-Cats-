@@ -1,11 +1,7 @@
-# STEP 0: Import Libraries
 import os
 import shutil
-import re
 import tensorflow as tf
 import pathlib
-#from tensorflow.keras import layers, models
-
 
 # Dataset URL
 dataset_url = "https://download.microsoft.com/download/3/E/1/3E1C3F21-ECDB-4869-8368-6DEBA77B919F/kagglecatsanddogs_5340.zip"
@@ -37,8 +33,8 @@ for dossier in os.listdir(datasets_dir):
             
             # Vérifier si l'élément est un fichier
             if os.path.isfile(chemin_source):
-                # Créer le nouveau nom en ajoutant le nom du dossier en préfixe
-                nouveau_nom = f"{dossier}_{fichier}"
+                # Créer le nouveau nom en ajoutant le nom du dossier en préfixe en minuscules
+                nouveau_nom = f"{dossier.lower()}.{fichier.lower()}"
                 chemin_destination = os.path.join(dossier_complet, nouveau_nom)
                 
                 # Renommer le fichier
@@ -69,5 +65,5 @@ for filename in os.listdir(dog_source_dir):
 
 print("Operation completed: The 'initial_dataset' folder has been renamed, and the files have been copied to 'Dataset/train'.")
 
-# move "test_set" into "Dataset" folder
+# Move "test_set" into "Dataset" folder
 shutil.move('Test_set', 'Dataset')
