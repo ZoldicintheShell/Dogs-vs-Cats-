@@ -5,6 +5,7 @@
 #pip install matplotlib
 #pip install pandas
 #pip install pydot
+#pip install ephem
 #brew install graphviz
 
 #FOR MAC: watch Readme
@@ -18,7 +19,6 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import pathlib
 #from tensorflow.keras import layers, models
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -36,7 +36,8 @@ from CI_ai_lib import show_result, \
 						make_predictions, \
 						plotloss, \
 						get_image_dimensions, \
-                        record_csv, delete_random_files
+                        record_csv, delete_random_files, \
+                        get_experiment_number, generate_experiment_id
 
 #---------------------------------------
 #		META PARAMETERS
@@ -45,7 +46,7 @@ img_height      = 150
 img_width       = 150
 channel         = 3
 BATCH_SIZE 		= 15 #32
-EPOCHS 			= 30 #10
+EPOCHS 			= 2 #30 #10
 LEARNING_RATE 	= 1e-4
 splitting 		= 0.8 # How do we want to split our training and validation set
 #label_size	#How much of the dataset we want to keep
@@ -55,8 +56,14 @@ labels              = ['dog', 'cat'] #labels that where are working on (becarefu
 base_directory      = '.' #path of the super folder
 initial_directory   = 'Dataset/train'   #Where are initially the data
 final_directory     = 'Experiment1' #where do we want to create the folders containing our set for train and validation
-percentage_to_delete_dog = percentage_to_delete_cat = 50 # Number of cat and dog wa want to delete
+percentage_to_delete_dog = percentage_to_delete_cat = 0 #50 # Number of cat and dog wa want to delete
 
+markdown_file_path = "experiment_number.md"  # Remplacez par le chemin de votre fichier Markdown
+experiment_number = get_experiment_number(markdown_file_path)
+#print("numero de l'experience: ",experiment_number)
+id_generated = generate_experiment_id()
+experiment_id = str(experiment_number)+str(id_generated)
+print("experiment id: ",experiment_id)
 # ------------------------------- FUNCTIONS -----------------------------
 
 
@@ -68,38 +75,28 @@ percentage_to_delete_dog = percentage_to_delete_cat = 50 # Number of cat and dog
 # download data
 #kaggle competitions download -c dogs-vs-cats
 
-# Hexagone modification
-#
-# Dataset link: https://www.kaggle.com/datasets/tongpython/cat-and-dog
-dataset_url = "https://storage.googleapis.com/kaggle-data-sets/23777/30378/bundle/archive.zip?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=gcp-kaggle-com%40kaggle-161607.iam.gserviceaccount.com%2F20231011%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20231011T173250Z&X-Goog-Expires=259200&X-Goog-SignedHeaders=host&X-Goog-Signature=4c6174245030c31e72eb54b47ab22960ae6823e41ed9737871101b7dd2d8dd2ac3abd571df87183e40814e04343d0640f073f426cd3988e73a54b9e17f2642ba19428a4a046c8b24ac27228fd3b010cb144aa4ac7dd6fd0be5c6196892cc96733f788b5e0908cb230265eea6e4537129acd0dd2bff19abba70b5650ce122893e15702f0d48e50f6bcb3bdca084d89974a3e8ad2089f66033d7d661d99360df06e43e8ce413a607ee0d499649ac27f003e66e0a52c19151664e739c6257284a028e379eae1dfae5147bfa761e32b988afb2a1084f612dcb48e9a05d942b17ef30fc42f409d4e49ae0b10f70551ae7591a39c0385e02d00ceeb095dd63a8d753b2"
-archive = tf.keras.utils.get_file(origin=dataset_url, extract=True)
-# path to dataset
-data_dir = pathlib.Path(archive).with_suffix('')
-print(f'Dataset downloaded and extracted to {data_dir}\n')
-# End modification
-
 # get info about our data 
 dataset_dir = 'Dataset' #chemin_vers_votre_repertoire
 DATASET_DIR = os.path.join(dataset_dir, 'train')
 
 # Check if we find our data
 print("number of Total images:\t", len(os.listdir('Dataset/train')))
-print("number of testing features:\t", 	len(os.listdir('Dataset/test1')))
+print("number of testing features:\t", 	len(os.listdir('Dataset/Test_set')))
 
 # Verify the number of dog and cat image
 #---- 1. It could happen that whe have wrong label images 
 #---- 2. Do we have same number of images for dog and cats?
 #---- 3. How changing the number of dog images will affect the accuracy? 
-nbr_dog = count_files_with_word(DATASET_DIR, "dog")
-nbr_cat = count_files_with_word(DATASET_DIR, "cat")
-print(f"Number of images labeld as 'dog' in dataset : {nbr_dog}")
-print(f"Number of images labeld as 'cat' in dataset : {nbr_cat}")
+nbr_dog = count_files_with_word(DATASET_DIR, "Dog")
+nbr_cat = count_files_with_word(DATASET_DIR, "Cat")
+print(f"Number of images labeld as 'Dog' in dataset : {nbr_dog}")
+print(f"Number of images labeld as 'Cat' in dataset : {nbr_cat}")
 
 
 #---------------------------------------
 # STEP 2: KNOW MORE ABOUT OUR DATA
 #---------------------------------------
-min_width, min_height = get_image_dimensions(directory = "Dataset/test1")
+min_width, min_height = get_image_dimensions(directory = "Dataset/Test_set")
 print(f"Dimension minimale en largeur (width) : {min_width}")
 print(f"Dimension minimale en hauteur (height) : {min_height}")
 
@@ -114,20 +111,20 @@ create_folders_for_labels(labels, final_directory)
 
 # 2 - Create a folders for each feature containing all images labeled as it (here dog and cat folders)
 organize_files_by_labels(labels, initial_directory, final_directory)
-print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "dog"))))
-print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "cat"))))
+print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "Dog"))))
+print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "Cat"))))
 
 # 3 - Reduce the number of images in the Dataset (or not) 
-delete_random_files(folder_path = os.path.join(final_directory, "dog"), percentage_to_delete = percentage_to_delete_dog)
-delete_random_files(folder_path = os.path.join(final_directory, "cat"), percentage_to_delete = percentage_to_delete_cat)
-nbr_dog = len(os.listdir(os.path.join(final_directory, "dog")))
-nbr_cat = len(os.listdir(os.path.join(final_directory, "cat")))
+delete_random_files(folder_path = os.path.join(final_directory, "Dog"), percentage_to_delete = percentage_to_delete_dog)
+delete_random_files(folder_path = os.path.join(final_directory, "Cat"), percentage_to_delete = percentage_to_delete_cat)
+nbr_dog = len(os.listdir(os.path.join(final_directory, "Dog")))
+nbr_cat = len(os.listdir(os.path.join(final_directory, "Cat")))
 print("number of dog images in dog folder after dataset reduction:", nbr_dog)
 print("number of cat images in cat folder after dataset reduction:", nbr_cat)
 
 # 4 - Split the training_set and the validation_set for each label (here dog and cats)
-split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
-split_files(source_directory = os.path.join(final_directory, "cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/cat"), pourcentage = splitting)
+split_files(source_directory = os.path.join(final_directory, "Dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/Dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/Dog"), pourcentage = splitting)
+split_files(source_directory = os.path.join(final_directory, "Cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/Cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/Cat"), pourcentage = splitting)
 
 #-- To verify : 
 print("number of dog in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/dog"))))
@@ -273,16 +270,16 @@ model.compile(
 
 # Callback initialization
 #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
-earlystop = EarlyStopping(patience = 5)
-learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 2 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
-tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
+#earlystop = EarlyStopping(patience = 5)
+#learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
+#tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
 
 history = model.fit(
     train_generator, #x, Y
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
 #    verbose="auto",
-    callbacks = [earlystop,learning_rate_reduction],
+#    callbacks = [earlystop,learning_rate_reduction],
 #    validation_split=0.0,
     validation_data=validation_generator,
 #    shuffle=True,
@@ -329,7 +326,8 @@ print("Loss on validation set:", evaluation[0])
 print("Accuracy on validation set:", evaluation[1])
 
 # Save log of the model
-print(record_csv(experiment_path = final_directory,
+print(record_csv(experiment_id = experiment_id,
+    experiment_path = final_directory,
     save_history = history, 
     lr = LEARNING_RATE, 
     bs = BATCH_SIZE, 
@@ -346,7 +344,7 @@ print(record_csv(experiment_path = final_directory,
 # STEP 11 : MODEL PREDICTION
 #---------------------------------------
 
-make_predictions(model, test_directory = 'Dataset/test1', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
+make_predictions(model, test_directory = 'Dataset/Test_set', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
 
 
 #---------------------------------------
@@ -369,7 +367,7 @@ model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'
 # show how many data augmentation and samples
 # plot graph of plotloss
 # plot result of record_csv
-# Show correlation graoh between all the parameters and the accuracy
+# Show correlation graph between all the parameters and the accuracy
 # plot images where the code gets wrong (show_false_prediction)
 # add remarks
 
@@ -382,10 +380,10 @@ model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'
 # STEP 13 : CLEAN MEMORY
 #---------------------------------------
 # Sauvegarde du modèle (optionnelle)
-#shutil.rmtree(os.path.join(final_directory, "dog"))
-#shutil.rmtree(os.path.join(final_directory, "cat"))
-#shutil.rmtree(os.path.join(final_directory, "Training_set"))
-#shutil.rmtree(os.path.join(final_directory, "Validation_set"))
+shutil.rmtree(os.path.join(final_directory, "dog"))
+shutil.rmtree(os.path.join(final_directory, "cat"))
+shutil.rmtree(os.path.join(final_directory, "Training_set"))
+shutil.rmtree(os.path.join(final_directory, "Validation_set"))
 
 
 
