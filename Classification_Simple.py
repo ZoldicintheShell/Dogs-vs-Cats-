@@ -18,6 +18,7 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import pathlib
 #from tensorflow.keras import layers, models
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -66,6 +67,15 @@ percentage_to_delete_dog = percentage_to_delete_cat = 50 # Number of cat and dog
 #---------------------------------------
 # download data
 #kaggle competitions download -c dogs-vs-cats
+
+# Hexagone modification
+#
+# Dataset link: https://www.kaggle.com/datasets/tongpython/cat-and-dog
+dataset_url = "https://storage.googleapis.com/kaggle-data-sets/23777/30378/bundle/archive.zip?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=gcp-kaggle-com%40kaggle-161607.iam.gserviceaccount.com%2F20231011%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20231011T173250Z&X-Goog-Expires=259200&X-Goog-SignedHeaders=host&X-Goog-Signature=4c6174245030c31e72eb54b47ab22960ae6823e41ed9737871101b7dd2d8dd2ac3abd571df87183e40814e04343d0640f073f426cd3988e73a54b9e17f2642ba19428a4a046c8b24ac27228fd3b010cb144aa4ac7dd6fd0be5c6196892cc96733f788b5e0908cb230265eea6e4537129acd0dd2bff19abba70b5650ce122893e15702f0d48e50f6bcb3bdca084d89974a3e8ad2089f66033d7d661d99360df06e43e8ce413a607ee0d499649ac27f003e66e0a52c19151664e739c6257284a028e379eae1dfae5147bfa761e32b988afb2a1084f612dcb48e9a05d942b17ef30fc42f409d4e49ae0b10f70551ae7591a39c0385e02d00ceeb095dd63a8d753b2"
+archive = tf.keras.utils.get_file(origin=dataset_url, extract=True)
+# path to dataset
+data_dir = pathlib.Path(archive).with_suffix('')
+# End modification
 
 # get info about our data 
 dataset_dir = 'Dataset' #chemin_vers_votre_repertoire
