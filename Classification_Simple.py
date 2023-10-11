@@ -75,6 +75,7 @@ dataset_url = "https://storage.googleapis.com/kaggle-data-sets/23777/30378/bundl
 archive = tf.keras.utils.get_file(origin=dataset_url, extract=True)
 # path to dataset
 data_dir = pathlib.Path(archive).with_suffix('')
+print(f'Dataset downloaded and extracted to {data_dir}\n')
 # End modification
 
 # get info about our data 
