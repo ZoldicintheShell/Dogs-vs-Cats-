@@ -52,373 +52,395 @@ initial_directory   = 'Dataset/train'   #Where are initially the data
 # Définir les valeurs que vous souhaitez tester pour chaque paramètre
 img_height_values = [150]  # Exemple de différentes hauteurs d'image
 img_width_values = [150]   # Exemple de différentes largeurs d'image
-batch_size_values = [15, 32]    # Exemple de différentes tailles de lot
-epochs_values = [2]#,30, 10]        # Exemple de différentes valeurs d'époque
-learning_rate_values = [1e-4, 1e-3]  # Exemple de différentes taux d'apprentissage
+batch_size_values = [64, 32, 16]    # Exemple de différentes tailles de lot
+epochs_values = [10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
+learning_rate_values = [1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
 
 
 optimizer_values = ['adam', 'sgd', 'rmsprop']  # Exemple de différents optimiseurs
-percentage_to_delete_dog_values = [0, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
-percentage_to_delete_cat_values = [0, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
-splitting_values = [0.7, 0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
+percentage_to_delete_dog_values = [0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
+percentage_to_delete_cat_values = [0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
+splitting_values = [0.5, 0.6, 0.7, 0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
 
 # Utilisez product pour créer toutes les combinaisons possibles de paramètres
-param_combinations = product(img_height_values, img_width_values, batch_size_values, epochs_values,
-                             learning_rate_values, optimizer_values, percentage_to_delete_dog_values,
-                             percentage_to_delete_cat_values, splitting_values)
+param_combinations = list(product(img_height_values, img_width_values, batch_size_values, epochs_values,
+                                   learning_rate_values, optimizer_values, percentage_to_delete_dog_values,
+                                   percentage_to_delete_cat_values, splitting_values))
+actual_combinaison = 0
 
 # Boucle sur toutes les combinaisons de paramètres
 for params in param_combinations:
-    img_height, img_width, BATCH_SIZE, EPOCHS, LEARNING_RATE, optimizer, \
-    percentage_to_delete_dog, percentage_to_delete_cat, splitting = params
+    
+    try:
+        img_height, img_width, BATCH_SIZE, EPOCHS, LEARNING_RATE, optimizer, \
+        percentage_to_delete_dog, percentage_to_delete_cat, splitting = params
 
 
-    markdown_file_path = "experiment_number.md"  # Remplacez par le chemin de votre fichier Markdown
-    experiment_number = get_experiment_number(markdown_file_path)
-    #print("numero de l'experience: ",experiment_number)
-    id_generated = generate_experiment_id()
-    experiment_id = str(experiment_number)+str(id_generated)
-    print("experiment id: ",experiment_id)
-    final_directory     = 'Experiment1/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
-
-    # ------------------------------- FUNCTIONS -----------------------------
-
-
-    # ------------------------------- CODE -----------------------------
-
-    #---------------------------------------
-    # STEP 1: Data Loading 
-    #---------------------------------------
-    # download data
-    #kaggle competitions download -c dogs-vs-cats
-
-    # get info about our data 
-    dataset_dir = 'Dataset' #chemin_vers_votre_repertoire
-    DATASET_DIR = os.path.join(dataset_dir, 'train')
-
-    # Check if we find our data
-    print("number of Total images:\t", len(os.listdir('Dataset/train')))
-    print("number of testing features:\t",  len(os.listdir('Dataset/test1')))
-
-    # Verify the number of dog and cat image
-    #---- 1. It could happen that whe have wrong label images 
-    #---- 2. Do we have same number of images for dog and cats?
-    #---- 3. How changing the number of dog images will affect the accuracy? 
-    nbr_dog = count_files_with_word(DATASET_DIR, "dog")
-    nbr_cat = count_files_with_word(DATASET_DIR, "cat")
-    print(f"Number of images labeld as 'dog' in dataset : {nbr_dog}")
-    print(f"Number of images labeld as 'cat' in dataset : {nbr_cat}")
+        #get the id of the experiment
+        markdown_file_path = "experiment_number.md"  # Remplacez par le chemin de votre fichier Markdown
+        experiment_number = get_experiment_number(markdown_file_path)
+        #print("numero de l'experience: ",experiment_number)
+        id_generated = generate_experiment_id()
+        experiment_id = str(experiment_number)+str(id_generated)
+        print("experiment id: ",experiment_id)
+        final_directory     = 'Experiment1/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
+        
+        #Get the number of combinaisons
+        num_combinations = len(list(param_combinations)) # Comptez le nombre de combinaisons
+        print(f"Nombre de combinaisons de paramètres : {num_combinations}")# Affichez le nombre de combinaisons
+        print("combination:",param_combinations[actual_combinaison] )# to print all the combinaisons
+        
+        
+        # ------------------------------- FUNCTIONS -----------------------------
 
 
-    #---------------------------------------
-    # STEP 2: KNOW MORE ABOUT OUR DATA
-    #---------------------------------------
-    min_width, min_height = get_image_dimensions(directory = "Dataset/test1")
-    print(f"Dimension minimale en largeur (width) : {min_width}")
-    print(f"Dimension minimale en hauteur (height) : {min_height}")
+        # ------------------------------- CODE -----------------------------
+
+        #---------------------------------------
+        # STEP 1: Data Loading 
+        #---------------------------------------
+        # download data
+        #kaggle competitions download -c dogs-vs-cats
 
 
-    #---------------------------------------
-    # STEP 3 : SPLIT TRAINING SET AND VALIDATION SET
-    #---------------------------------------
+        # get info about our data 
+        dataset_dir = 'Dataset' #chemin_vers_votre_repertoire
+        DATASET_DIR = os.path.join(dataset_dir, 'train')
 
-    # 1 - Create folders for Training_set and validation_set and all folders intricated by the labels for each feature 
-    create_folders_for_labels(labels, final_directory)
+        # Check if we find our data
+        print("number of Total images:\t", len(os.listdir('Dataset/train')))
+        print("number of testing features:\t",  len(os.listdir('Dataset/Test_set')))
 
-
-    # 2 - Create a folders for each feature containing all images labeled as it (here dog and cat folders)
-    organize_files_by_labels(labels, initial_directory, final_directory)
-    print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "dog"))))
-    print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "cat"))))
-
-    # 3 - Reduce the number of images in the Dataset (or not) 
-    delete_random_files(folder_path = os.path.join(final_directory, "dog"), percentage_to_delete = percentage_to_delete_dog)
-    delete_random_files(folder_path = os.path.join(final_directory, "cat"), percentage_to_delete = percentage_to_delete_cat)
-    nbr_dog = len(os.listdir(os.path.join(final_directory, "dog")))
-    nbr_cat = len(os.listdir(os.path.join(final_directory, "cat")))
-    print("number of dog images in dog folder after dataset reduction:", nbr_dog)
-    print("number of cat images in cat folder after dataset reduction:", nbr_cat)
-
-    # 4 - Split the training_set and the validation_set for each label (here dog and cats)
-    split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
-    split_files(source_directory = os.path.join(final_directory, "cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/cat"), pourcentage = splitting)
-
-    #-- To verify : 
-    print("number of dog in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/dog"))))
-    print("number of cat in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/cat"))))
-    print("number of dog in validation set:",   len(os.listdir(os.path.join(final_directory, "Validation_set/dog"))))
-    print("number of cat in validation set:",   len(os.listdir(os.path.join(final_directory, "Validation_set/cat"))))
+        # Verify the number of dog and cat image
+        #---- 1. It could happen that whe have wrong label images 
+        #---- 2. Do we have same number of images for dog and cats?
+        #---- 3. How changing the number of dog images will affect the accuracy? 
+        nbr_dog = count_files_with_word(DATASET_DIR, "dog")
+        nbr_cat = count_files_with_word(DATASET_DIR, "cat")
+        print(f"Number of images labeld as 'dog' in dataset : {nbr_dog}")
+        print(f"Number of images labeld as 'cat' in dataset : {nbr_cat}")
 
 
-    #---------------------------------------
-    # STEP 4 : DATA AUGMENTATION
-    #---------------------------------------
-
-    # Préparation des données sans augmentation
-    train_datagen = ImageDataGenerator(rescale=1.0/255.) # Les valeurs des canaux RVB sont dans la plage [0, 255] . Ce n'est pas idéal pour un réseau neuronal ; en général, vous devriez chercher à rendre vos valeurs d'entrée petites. Ici, vous allez normaliser les valeurs pour qu'elles soient dans la plage [0, 1]
-    validation_datagen = ImageDataGenerator(rescale=1.0/255.) # We should even add a normalization layer actually in Keras. normalization_layer = tf.keras.layers.Rescaling(1./255)
-
+        #---------------------------------------
+        # STEP 2: KNOW MORE ABOUT OUR DATA
+        #---------------------------------------
+        min_width, min_height = get_image_dimensions(directory = "Dataset/Test_set")
+        print(f"Dimension minimale en largeur (width) : {min_width}")
+        print(f"Dimension minimale en hauteur (height) : {min_height}")
 
 
-    #---------------------------------------
-    # STEP 5 : ASSIGN TRAIN_SET AND VALIDATION_SET
-    #---------------------------------------
-    TRAINING_DIR = os.path.join(final_directory, "Training_set/")
-    train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_train,
-                                                        batch_size=BATCH_SIZE,
-                                                        class_mode='binary',
-                                                        target_size=(img_height, img_width),
-                                                        seed=0,
-                                                        shuffle=False)
+        #---------------------------------------
+        # STEP 3 : SPLIT TRAINING SET AND VALIDATION SET
+        #---------------------------------------
+
+        # 1 - Create folders for Training_set and validation_set and all folders intricated by the labels for each feature 
+        create_folders_for_labels(labels, final_directory)
 
 
-    VALIDATION_DIR = os.path.join(final_directory, "Validation_set/")
-    validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, #X_val,y_val,
-                                                                  batch_size=BATCH_SIZE,
-                                                                  class_mode='binary',
-                                                                  target_size=(img_height, img_width),
-                                                                  shuffle=False)
+        # 2 - Create a folders for each feature containing all images labeled as it (here dog and cat folders)
+        organize_files_by_labels(labels, initial_directory, final_directory)
+        print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "dog"))))
+        print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "cat"))))
 
-    nb_train_images     = len(os.listdir(os.path.join(final_directory, "Training_set/dog/")))   + len(os.listdir(os.path.join(final_directory, "Training_set/cat/")))
-    nb_validation_images= len(os.listdir(os.path.join(final_directory, "Validation_set/dog/"))) + len(os.listdir(os.path.join(final_directory, "Validation_set/dog/")))
-    print("\nnumber of images in the Training_set:", nb_train_images)
-    print("number of images in the Validation_set:", nb_validation_images)
+        # 3 - Reduce the number of images in the Dataset (or not) 
+        delete_random_files(folder_path = os.path.join(final_directory, "dog"), percentage_to_delete = percentage_to_delete_dog)
+        delete_random_files(folder_path = os.path.join(final_directory, "cat"), percentage_to_delete = percentage_to_delete_cat)
+        nbr_dog = len(os.listdir(os.path.join(final_directory, "dog")))
+        nbr_cat = len(os.listdir(os.path.join(final_directory, "cat")))
+        print("number of dog images in dog folder after dataset reduction:", nbr_dog)
+        print("number of cat images in cat folder after dataset reduction:", nbr_cat)
 
+        # 4 - Split the training_set and the validation_set for each label (here dog and cats)
+        split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
+        split_files(source_directory = os.path.join(final_directory, "cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/cat"), pourcentage = splitting)
 
-    #---------------------------------------
-    # STEP 6 : MODEL ARCHITECTURE DESIGN
-    #---------------------------------------
-
-    # Création du modèle
-
-
-    #---DUMB-----------
-
-    """
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(128, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Flatten())
-    model.add(Dense(512, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
-    """
-
-    #---COMPLEX-----------
-
-    """
-    model = Sequential()
-
-    model.add(Conv2D(32,(3,3),activation='relu',input_shape=(img_height, img_width, channel)))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(0.25))
-
-    model.add(Conv2D(64,(3,3),activation='relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(0.25))
-
-    model.add(Conv2D(128,(3,3),activation='relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(0.25))
-
-    model.add(Flatten())
-    model.add(Dense(512,activation='relu'))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-    model.add(Dense(1,activation='softmax'))
-    """
+        #-- To verify : 
+        print("number of dog in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/dog"))))
+        print("number of cat in training set:",     len(os.listdir(os.path.join(final_directory, "Training_set/cat"))))
+        print("number of dog in validation set:",   len(os.listdir(os.path.join(final_directory, "Validation_set/dog"))))
+        print("number of cat in validation set:",   len(os.listdir(os.path.join(final_directory, "Validation_set/cat"))))
 
 
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)),
-        tf.keras.layers.MaxPooling2D(2, 2),
-        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-        tf.keras.layers.MaxPooling2D(2, 2),
-        tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-        tf.keras.layers.MaxPooling2D(2, 2),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(512, activation='relu'),
-        tf.keras.layers.Dense(1, activation='sigmoid')
-    ])
+        #---------------------------------------
+        # STEP 4 : DATA AUGMENTATION
+        #---------------------------------------
+
+        # Préparation des données sans augmentation
+        train_datagen = ImageDataGenerator(rescale=1.0/255.) # Les valeurs des canaux RVB sont dans la plage [0, 255] . Ce n'est pas idéal pour un réseau neuronal ; en général, vous devriez chercher à rendre vos valeurs d'entrée petites. Ici, vous allez normaliser les valeurs pour qu'elles soient dans la plage [0, 1]
+        validation_datagen = ImageDataGenerator(rescale=1.0/255.) # We should even add a normalization layer actually in Keras. normalization_layer = tf.keras.layers.Rescaling(1./255)
 
 
-    #---------------------------------------
-    # STEP 7 : MODEL VIZUALISATION 
-    #---------------------------------------
-    model.summary() #plot a summary of the model
+
+        #---------------------------------------
+        # STEP 5 : ASSIGN TRAIN_SET AND VALIDATION_SET
+        #---------------------------------------
+        TRAINING_DIR = os.path.join(final_directory, "Training_set/")
+        train_generator = train_datagen.flow_from_directory(TRAINING_DIR,#X_train,y_train,
+                                                            batch_size=BATCH_SIZE,
+                                                            class_mode='binary',
+                                                            target_size=(img_height, img_width),
+                                                            seed=0,
+                                                            shuffle=False)
 
 
-    plot_model(model, to_file = os.path.join(final_directory, 'model_plot.png'), show_shapes=True, show_layer_names=True) #plot the model
+        VALIDATION_DIR = os.path.join(final_directory, "Validation_set/")
+        validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, #X_val,y_val,
+                                                                      batch_size=BATCH_SIZE,
+                                                                      class_mode='binary',
+                                                                      target_size=(img_height, img_width),
+                                                                      shuffle=False)
 
-    #---------------------------------------
-    # STEP 8 : MODEL COMPILING
-    #---------------------------------------
-    model.compile(
-        optimizer = tf.keras.optimizers.legacy.RMSprop(
-            learning_rate = LEARNING_RATE, 
-            #rho=0.9,
-            #momentum=0.0,
-            #epsilon=1e-07,
-            #centered=False,
-            #name='RMSprop',
+        nb_train_images     = len(os.listdir(os.path.join(final_directory, "Training_set/dog/")))   + len(os.listdir(os.path.join(final_directory, "Training_set/cat/")))
+        nb_validation_images= len(os.listdir(os.path.join(final_directory, "Validation_set/dog/"))) + len(os.listdir(os.path.join(final_directory, "Validation_set/dog/")))
+        print("\nnumber of images in the Training_set:", nb_train_images)
+        print("number of images in the Validation_set:", nb_validation_images)
+
+
+        #---------------------------------------
+        # STEP 6 : MODEL ARCHITECTURE DESIGN
+        #---------------------------------------
+
+        # Création du modèle
+
+
+        #---DUMB-----------
+
+        """
+        model = Sequential()
+        model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
+        model.add(MaxPooling2D(2, 2))
+        model.add(Conv2D(64, (3, 3), activation='relu'))
+        model.add(MaxPooling2D(2, 2))
+        model.add(Conv2D(128, (3, 3), activation='relu'))
+        model.add(MaxPooling2D(2, 2))
+        model.add(Flatten())
+        model.add(Dense(512, activation='relu'))
+        model.add(Dense(1, activation='sigmoid'))
+        """
+
+        #---COMPLEX-----------
+
+        """
+        model = Sequential()
+
+        model.add(Conv2D(32,(3,3),activation='relu',input_shape=(img_height, img_width, channel)))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(pool_size=(2,2)))
+        model.add(Dropout(0.25))
+
+        model.add(Conv2D(64,(3,3),activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(pool_size=(2,2)))
+        model.add(Dropout(0.25))
+
+        model.add(Conv2D(128,(3,3),activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(pool_size=(2,2)))
+        model.add(Dropout(0.25))
+
+        model.add(Flatten())
+        model.add(Dense(512,activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.5))
+        model.add(Dense(1,activation='softmax'))
+        """
+
+
+        model = tf.keras.models.Sequential([
+            tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)),
+            tf.keras.layers.MaxPooling2D(2, 2),
+            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+            tf.keras.layers.MaxPooling2D(2, 2),
+            tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+            tf.keras.layers.MaxPooling2D(2, 2),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(512, activation='relu'),
+            tf.keras.layers.Dense(1, activation='sigmoid')
+        ])
+
+
+        #---------------------------------------
+        # STEP 7 : MODEL VIZUALISATION 
+        #---------------------------------------
+        model.summary() #plot a summary of the model
+
+
+        plot_model(model, to_file = os.path.join(final_directory, 'model_plot.png'), show_shapes=True, show_layer_names=True) #plot the model
+
+        #---------------------------------------
+        # STEP 8 : MODEL COMPILING
+        #---------------------------------------
+        model.compile(
+            optimizer = tf.keras.optimizers.legacy.RMSprop(
+                learning_rate = LEARNING_RATE, 
+                #rho=0.9,
+                #momentum=0.0,
+                #epsilon=1e-07,
+                #centered=False,
+                #name='RMSprop',
+                #**kwargs
+            ),
+            loss='binary_crossentropy', 
+            metrics=['acc'], #tf.keras.metrics.BinaryAccuracy()
+            #loss_weights=None,
+            #weighted_metrics=None,
+            #run_eagerly=None,
+            #steps_per_execution=None,
+            #jit_compile=None,
+            #pss_evaluation_shards=0,
             #**kwargs
-        ),
-        loss='binary_crossentropy', 
-        metrics=['acc'], #tf.keras.metrics.BinaryAccuracy()
-        #loss_weights=None,
-        #weighted_metrics=None,
-        #run_eagerly=None,
-        #steps_per_execution=None,
-        #jit_compile=None,
-        #pss_evaluation_shards=0,
-        #**kwargs
-        )
+            )
 
 
-    #---------------------------------------
-    # STEP 9 : MODEL TRAINING
-    #---------------------------------------
+        #---------------------------------------
+        # STEP 9 : MODEL TRAINING
+        #---------------------------------------
 
-    # Callback initialization
-    #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
-    #earlystop = EarlyStopping(patience = 5)
-    #learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
-    #tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
+        # Callback initialization
+        #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
+        #earlystop = EarlyStopping(patience = 5)
+        #learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
+        #tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
 
-    history = model.fit(
-        train_generator, #x, Y
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-    #    verbose="auto",
-    #    callbacks = [earlystop,learning_rate_reduction],
-    #    validation_split=0.0,
-        validation_data=validation_generator,
-    #    shuffle=True,
-    #    class_weight=None,
-    #    sample_weight=None,
-    #    initial_epoch=0,
-        steps_per_epoch=nb_train_images//BATCH_SIZE,
-        validation_steps=nb_validation_images//BATCH_SIZE,
-    #    validation_batch_size=None,
-    #    validation_freq=1,
-    #    max_queue_size=10,
-    #    workers=1,
-    #    use_multiprocessing=False,
+        history = model.fit(
+            train_generator, #x, Y
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+        #    verbose="auto",
+        #    callbacks = [earlystop,learning_rate_reduction],
+        #    validation_split=0.0,
+            validation_data=validation_generator,
+        #    shuffle=True,
+        #    class_weight=None,
+        #    sample_weight=None,
+        #    initial_epoch=0,
+            steps_per_epoch=nb_train_images//BATCH_SIZE,
+            validation_steps=nb_validation_images//BATCH_SIZE,
+        #    validation_batch_size=None,
+        #    validation_freq=1,
+        #    max_queue_size=10,
+        #    workers=1,
+        #    use_multiprocessing=False,
 
 
-                        )
+                            )
 
-    show_result(history, directory = final_directory)
-    plotloss(history, directory = final_directory)
+        show_result(history, directory = final_directory)
+        plotloss(history, directory = final_directory)
 
-    #---------------------------------------
-    # STEP 10 : MODEL EVALUATION
-    #---------------------------------------
-    print("\nMODEL EVALUATION ------------")
+        #---------------------------------------
+        # STEP 10 : MODEL EVALUATION
+        #---------------------------------------
+        print("\nMODEL EVALUATION ------------")
 
-    evaluation = model.evaluate(validation_generator
-    #    x=None,
-    #    y=None,
-    #    batch_size=None,
-    #    verbose="auto",
-    #    sample_weight=None,
-    #    steps=None,
-    #    callbacks=None,
-    #    max_queue_size=10,
-    #    workers=1,
-    #    use_multiprocessing=False,
-    #    return_dict=False,
-    #    **kwargs
-        )
+        evaluation = model.evaluate(validation_generator
+        #    x=None,
+        #    y=None,
+        #    batch_size=None,
+        #    verbose="auto",
+        #    sample_weight=None,
+        #    steps=None,
+        #    callbacks=None,
+        #    max_queue_size=10,
+        #    workers=1,
+        #    use_multiprocessing=False,
+        #    return_dict=False,
+        #    **kwargs
+            )
 
 
 
-    print("Loss on validation set:", evaluation[0])
-    print("Accuracy on validation set:", evaluation[1])
-
-    # Save log of the model
-    print(record_csv(experiment_id = experiment_id,
-        experiment_path = final_directory,
-        save_history = history, 
-        lr = LEARNING_RATE, 
-        bs = BATCH_SIZE, 
-        opt='ADAM',
-        number_of_img_train = nb_train_images , 
-        number_of_img_val = nb_validation_images, 
-        number_of_cat = nbr_cat, 
-        number_of_dog = nbr_dog))
-
-
-
-
-    #---------------------------------------
-    # STEP 11 : MODEL PREDICTION
-    #---------------------------------------
-
-    make_predictions(model, test_directory = 'Dataset/test1', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
-
-
-    #---------------------------------------
-    # STEP 12 : MODEL SAVING
-    #---------------------------------------
-    # Sauvegarde du modèle (optionnelle)
-    model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'))
-
-    #---------------------------------------
-    #       GENERATE REPORT
-    #---------------------------------------
-    # call mew etc
-    # show the number of the experiment 
-    # show hyper parameters and accuracy and image size
-    # show time taken
-    # Show graph Architecture
-    # show number of features
-    # plot how many dogs and how many cats
-    # plot how many features in the training set and how many in the validation set
-    # show how many data augmentation and samples
-    # plot graph of plotloss
-    # plot result of record_csv
-    # Show correlation graph between all the parameters and the accuracy
-    # plot images where the code gets wrong (show_false_prediction)
-    # add remarks
-
-    # Function to create
-    #def visualize_validation_results(?):
-    #def visualize_train_results(?):
-
-
-    #---------------------------------------
-    # STEP 13 : CLEAN MEMORY
-    #---------------------------------------
-    # Sauvegarde du modèle (optionnelle)
-    shutil.rmtree(os.path.join(final_directory, "dog"))
-    shutil.rmtree(os.path.join(final_directory, "cat"))
-    shutil.rmtree(os.path.join(final_directory, "Training_set"))
-    shutil.rmtree(os.path.join(final_directory, "Validation_set"))
+        print("Loss on validation set:", evaluation[0])
+        print("Accuracy on validation set:", evaluation[1])
 
 
 
 
 
 
+        #---------------------------------------
+        # STEP 11 : MODEL PREDICTION
+        #---------------------------------------
 
-    """
-    # ========== DATA AUGMENTATION
-    # Préparation des données avec augmentation des images (data augmentation)
-    train_data_generator = ImageDataGenerator(
-        rescale=1.0 / 255.0,  # Mise à l'échelle des pixels entre 0 et 1
-        rotation_range=40,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True,
-        fill_mode='nearest'
-    )
-    """
+        make_predictions(model, test_directory = 'Dataset/Test_set', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
+
+
+        #---------------------------------------
+        # STEP 12 : MODEL SAVING
+        #---------------------------------------
+        # Sauvegarde du modèle (optionnelle)
+        model.save(os.path.join(final_directory, 'model_dogs_vs_cats_no_augmentation.h5'))
+
+        #---------------------------------------
+        #       GENERATE REPORT
+        #---------------------------------------
+        # call mew etc
+        # show the number of the experiment 
+        # show hyper parameters and accuracy and image size
+        # show time taken
+        # Show graph Architecture
+        # show number of features
+        # plot how many dogs and how many cats
+        # plot how many features in the training set and how many in the validation set
+        # show how many data augmentation and samples
+        # plot graph of plotloss
+        # plot result of record_csv
+        # Show correlation graph between all the parameters and the accuracy
+        # plot images where the code gets wrong (show_false_prediction)
+        # add remarks
+
+        # Function to create
+        #def visualize_validation_results(?):
+        #def visualize_train_results(?):
+
+        # Save log of the model
+        print(record_csv(experiment_id = experiment_id,
+            experiment_path = final_directory,
+            splitting_values = splitting,
+            save_history = history, 
+            lr  = LEARNING_RATE, 
+            bs  = BATCH_SIZE, 
+            opt = optimizer,
+            number_of_img_train = nb_train_images , 
+            number_of_img_val = nb_validation_images, 
+            number_of_cat = nbr_cat, 
+            number_of_dog = nbr_dog))
+
+        #save the numer of combinaison
+        with open(os.path.join(final_directory, 'combinaison.md'), "w") as md_file:            
+            # Écrire la première combinaison uniquement
+            md_file.write(str(param_combinations[actual_combinaison]))
+
+
+
+
+        #---------------------------------------
+        # STEP 13 : CLEAN MEMORY
+        #---------------------------------------
+        # Sauvegarde du modèle (optionnelle)
+        shutil.rmtree(os.path.join(final_directory, "dog"))
+        shutil.rmtree(os.path.join(final_directory, "cat"))
+        shutil.rmtree(os.path.join(final_directory, "Training_set"))
+        shutil.rmtree(os.path.join(final_directory, "Validation_set"))
+
+    except Exception as e:
+        print(f"Error encountered for parameters: {params}")
+        print(f"Error details: {str(e)}")
+        continue  # Passe à la combinaison de paramètres suivante en cas d'erreur
+    
+    actual_combinaison = actual_combinaison + 1
+
+"""
+# ========== DATA AUGMENTATION
+# Préparation des données avec augmentation des images (data augmentation)
+train_data_generator = ImageDataGenerator(
+    rescale=1.0 / 255.0,  # Mise à l'échelle des pixels entre 0 et 1
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+"""
