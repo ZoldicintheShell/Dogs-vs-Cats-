@@ -5,6 +5,7 @@
 #pip install matplotlib
 #pip install pandas
 #pip install pydot
+#pip install plotly
 #brew install graphviz
 
 #FOR MAC: watch Readme
@@ -27,17 +28,16 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Activation, BatchNormalization, Dropout
 from tensorflow.keras.utils import plot_model
 from sklearn.model_selection import train_test_split
-from CI_ai_lib import show_result, \
-                        count_files_with_word, \
-                        move_files_with_word , \
-                        organize_files_by_labels,\
-                        create_folders_for_labels,\
-                        split_files, \
-                        make_predictions, \
-                        plotloss, \
-                        get_image_dimensions, \
-                        record_csv, delete_random_files,\
-                        get_experiment_number, generate_experiment_id
+from CI_ai_lib import (show_result, count_files_with_word, organize_files_by_labels,
+                       create_folders_for_labels, split_files, make_predictions, plotloss,
+                       get_image_dimensions, record_csv, delete_random_files,
+                       get_experiment_number, generate_experiment_id)
+
+#import our models
+from Models.model_simple import create_model_simple  
+from Models.model_medium import create_model_medium
+from Models.model_complex import create_model_complex  
+
 
 #---------------------------------------
 #       META PARAMETERS
@@ -50,22 +50,24 @@ initial_directory   = 'Dataset/train'   #Where are initially the data
 
 
 # Définir les valeurs que vous souhaitez tester pour chaque paramètre
-img_height_values = [150]  # Exemple de différentes hauteurs d'image
-img_width_values = [150]   # Exemple de différentes largeurs d'image
-batch_size_values = [64, 32, 16]    # Exemple de différentes tailles de lot
-epochs_values = [10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
-learning_rate_values = [1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
+img_height_values   = [150]       # Exemple de différentes hauteurs d'image
+img_width_values    = [150]        # Exemple de différentes largeurs d'image
+batch_size_values   = [32]        #[64, 32, 16]    # Exemple de différentes tailles de lot
+epochs_values       = [2]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
+learning_rate_values= [1e-4]   #[1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
 
 
-optimizer_values = ['adam', 'sgd', 'rmsprop']  # Exemple de différents optimiseurs
-percentage_to_delete_dog_values = [0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
-percentage_to_delete_cat_values = [0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
-splitting_values = [0.5, 0.6, 0.7, 0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
+optimizer_values = ['adam'] #['adam', 'sgd', 'rmsprop']  # Exemple de différents optimiseurs
+percentage_to_delete_dog_values = [0]#[0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
+percentage_to_delete_cat_values = [0]#[0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
+splitting_values = [0.7]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
+
+model_values = [create_model_simple(), create_model_medium(), create_model_complex()] # 
 
 # Utilisez product pour créer toutes les combinaisons possibles de paramètres
 param_combinations = list(product(img_height_values, img_width_values, batch_size_values, epochs_values,
                                    learning_rate_values, optimizer_values, percentage_to_delete_dog_values,
-                                   percentage_to_delete_cat_values, splitting_values))
+                                   percentage_to_delete_cat_values, splitting_values, model_values))
 actual_combinaison = 0
 
 # Boucle sur toutes les combinaisons de paramètres
@@ -73,7 +75,7 @@ for params in param_combinations:
     
     try:
         img_height, img_width, BATCH_SIZE, EPOCHS, LEARNING_RATE, optimizer, \
-        percentage_to_delete_dog, percentage_to_delete_cat, splitting = params
+        percentage_to_delete_dog, percentage_to_delete_cat, splitting, model = params
 
 
         #get the id of the experiment
@@ -83,13 +85,23 @@ for params in param_combinations:
         id_generated = generate_experiment_id()
         experiment_id = str(experiment_number)+str(id_generated)
         print("experiment id: ",experiment_id)
-        final_directory     = 'Experiment1/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
+        final_directory     = 'Experiment2/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
         
         #Get the number of combinaisons
         num_combinations = len(list(param_combinations)) # Comptez le nombre de combinaisons
         print(f"Nombre de combinaisons de paramètres : {num_combinations}")# Affichez le nombre de combinaisons
         print("combination:",param_combinations[actual_combinaison] )# to print all the combinaisons
         
+        # Show what is which model is it
+        if model == model_values[0]: 
+            print("Model: Model Simple") 
+            model_name = 'Experiment1_Model_Simple'
+        if model == model_values[1]: 
+            print("Model: Model Medium") 
+            model_name = 'Experiment1_Model_Medium'
+        if model == model_values[2]: 
+            print("Model: Model Complex") 
+            model_name = 'Experiment1_Model_Complex'
         
         # ------------------------------- FUNCTIONS -----------------------------
 
@@ -200,64 +212,6 @@ for params in param_combinations:
         # STEP 6 : MODEL ARCHITECTURE DESIGN
         #---------------------------------------
 
-        # Création du modèle
-
-
-        #---DUMB-----------
-
-        """
-        model = Sequential()
-        model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
-        model.add(MaxPooling2D(2, 2))
-        model.add(Conv2D(64, (3, 3), activation='relu'))
-        model.add(MaxPooling2D(2, 2))
-        model.add(Conv2D(128, (3, 3), activation='relu'))
-        model.add(MaxPooling2D(2, 2))
-        model.add(Flatten())
-        model.add(Dense(512, activation='relu'))
-        model.add(Dense(1, activation='sigmoid'))
-        """
-
-        #---COMPLEX-----------
-
-        """
-        model = Sequential()
-
-        model.add(Conv2D(32,(3,3),activation='relu',input_shape=(img_height, img_width, channel)))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(pool_size=(2,2)))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(64,(3,3),activation='relu'))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(pool_size=(2,2)))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(128,(3,3),activation='relu'))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(pool_size=(2,2)))
-        model.add(Dropout(0.25))
-
-        model.add(Flatten())
-        model.add(Dense(512,activation='relu'))
-        model.add(BatchNormalization())
-        model.add(Dropout(0.5))
-        model.add(Dense(1,activation='softmax'))
-        """
-
-
-        model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)),
-            tf.keras.layers.MaxPooling2D(2, 2),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D(2, 2),
-            tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D(2, 2),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(512, activation='relu'),
-            tf.keras.layers.Dense(1, activation='sigmoid')
-        ])
-
 
         #---------------------------------------
         # STEP 7 : MODEL VIZUALISATION 
@@ -319,14 +273,9 @@ for params in param_combinations:
         #    validation_batch_size=None,
         #    validation_freq=1,
         #    max_queue_size=10,
-        #    workers=1,
-        #    use_multiprocessing=False,
-
-
-                            )
-
-        show_result(history, directory = final_directory)
-        plotloss(history, directory = final_directory)
+        #    workers = 10,
+        #    use_multiprocessing=True,
+        )
 
         #---------------------------------------
         # STEP 10 : MODEL EVALUATION
@@ -352,10 +301,6 @@ for params in param_combinations:
 
         print("Loss on validation set:", evaluation[0])
         print("Accuracy on validation set:", evaluation[1])
-
-
-
-
 
 
         #---------------------------------------
@@ -393,8 +338,14 @@ for params in param_combinations:
         #def visualize_validation_results(?):
         #def visualize_train_results(?):
 
+        #plot training history
+        show_result(history, directory = final_directory)
+        plotloss(history, directory = final_directory)
+        
+
         # Save log of the model
         print(record_csv(experiment_id = experiment_id,
+            model_name = model_name,
             experiment_path = final_directory,
             splitting_values = splitting,
             save_history = history, 
@@ -413,22 +364,21 @@ for params in param_combinations:
 
 
 
-
-        #---------------------------------------
-        # STEP 13 : CLEAN MEMORY
-        #---------------------------------------
-        # Sauvegarde du modèle (optionnelle)
-        shutil.rmtree(os.path.join(final_directory, "dog"))
-        shutil.rmtree(os.path.join(final_directory, "cat"))
-        shutil.rmtree(os.path.join(final_directory, "Training_set"))
-        shutil.rmtree(os.path.join(final_directory, "Validation_set"))
-
     except Exception as e:
         print(f"Error encountered for parameters: {params}")
         print(f"Error details: {str(e)}")
         continue  # Passe à la combinaison de paramètres suivante en cas d'erreur
     
     actual_combinaison = actual_combinaison + 1
+
+    #---------------------------------------
+    # STEP 13 : CLEAN MEMORY
+    #---------------------------------------
+    # Sauvegarde du modèle (optionnelle)
+    shutil.rmtree(os.path.join(final_directory, "dog"))
+    shutil.rmtree(os.path.join(final_directory, "cat"))
+    shutil.rmtree(os.path.join(final_directory, "Training_set"))
+    shutil.rmtree(os.path.join(final_directory, "Validation_set"))
 
 """
 # ========== DATA AUGMENTATION
