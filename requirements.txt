@@ -1,5 +1,5 @@
 kaggle
--U scikit-learn
+scikit-learn
 Pillow
 matplotlib
 pandas
