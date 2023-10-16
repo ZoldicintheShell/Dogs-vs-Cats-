@@ -5,7 +5,7 @@
 `conda activate competitors_env`</br>
 
 #### Install requirements
-`conda install pip`</br>
+`conda install pip` *(if you don't have pip already)* </br>
 `pip install -r requirements.txt`</br>
 
 ## Get data
