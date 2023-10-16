@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import markdown_it
 import ephem
 import datetime
+import plotly.graph_objects as go
 from PIL import Image
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
@@ -17,6 +18,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
+from plotly.subplots import make_subplots
 #%matplotlib inline
 
 
@@ -239,6 +241,32 @@ def generate_experiment_id():
     
     return result_string
 
+def equilibrate_folders(folder1,folder2):
+    dog_folder = folder1
+    cat_folder = folder2
+
+    # Compter le nombre de fichiers dans chaque dossier
+    num_dog_files = len(os.listdir(dog_folder))
+    num_cat_files = len(os.listdir(cat_folder))
+
+    while num_dog_files != num_cat_files:
+        
+        if num_dog_files > num_cat_files:
+            # Supprimer un fichier du dossier 'Dog' si nécessaire
+            dog_files = os.listdir(dog_folder)
+            os.remove(os.path.join(dog_folder, dog_files[0]))
+        else:
+            # Supprimer un fichier du dossier 'Cat' si nécessaire
+            cat_files = os.listdir(cat_folder)
+            os.remove(os.path.join(cat_folder, cat_files[0]))
+
+        # Mettre à jour le nombre de fichiers dans chaque dossier
+        num_dog_files = len(os.listdir(dog_folder))
+        num_cat_files = len(os.listdir(cat_folder))
+
+    print("Folders 'Dog' and 'Cat' have now the same amount of files.")
+
+
 
 
 #----------------------------------------------------------------------- MAKE PREDECTION
@@ -280,7 +308,7 @@ def make_predictions(model, test_directory, output_csv, img_height, img_width):
 
 
 #----------------------------------------------------------------------- EVALUATE
-def record_csv(experiment_id,experiment_path,save_history,lr,bs,opt,number_of_img_train , number_of_img_val, number_of_cat, number_of_dog ):
+def record_csv(experiment_id,model_name,experiment_path,splitting_values,save_history,lr,bs,opt,number_of_img_train , number_of_img_val, number_of_cat, number_of_dog ):
   acc = save_history.history['acc']
   val_acc = save_history.history['val_acc']
   loss  = save_history.history['loss']
@@ -299,7 +327,7 @@ def record_csv(experiment_id,experiment_path,save_history,lr,bs,opt,number_of_im
   result.columns = ['acc','val_acc','loss','val_loss','fitting_rate','fitting_state']
 
   result.loc[result.fitting_rate >= float(0.8),'fitting_state']= 'Underfitting'
-  result.loc[result.fitting_rate <= float(0.4),'fitting_state']='0verfitting'
+  result.loc[result.fitting_rate <= float(0.4),'fitting_state']= '0verfitting'
   result.loc[(result.fitting_rate >= float(0.4)) & (result.fitting_rate <= float(0.8)),'fitting_state']='Finefitting'
 
   result["epochs"] = result.index
@@ -313,6 +341,8 @@ def record_csv(experiment_id,experiment_path,save_history,lr,bs,opt,number_of_im
   result["nbr_cat"] = number_of_cat
   result["nbr_dog"] = number_of_dog
   result["experiment_id"] = experiment_id
+  result["model_name"] = model_name
+  result["splitting_values"] = splitting_values
 
   experiment_id = str(experiment_id)
   filename = "experiment_n°"+experiment_id+"_records.csv"
@@ -371,7 +401,7 @@ def show_result(history, directory):
     acc_plot.legend()
 
     plt.savefig(os.path.join(directory,'training_plot.png'))
-    plt.show()
+    #plt.show()
 
 def plotloss(history, directory):
     plt.plot(history.history['loss'])
@@ -381,8 +411,7 @@ def plotloss(history, directory):
     plt.ylabel('Loss')
     plt.legend(['Train', 'Validation', 'Accuracy'])
     plt.savefig(os.path.join(directory, 'train_val_acc_plot.png'))
-    plt.show()
-    #plotloss(history)
+    #plt.show()
 
 
 #----------------------------------------------------------------------- TO IMPLEMENT
