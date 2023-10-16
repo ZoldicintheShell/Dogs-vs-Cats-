@@ -11,3 +11,6 @@
 ## Get data
 `python Tools/auto_get.py`
 
+## Perform Grid Test
+`python Grid_test.py`
+
