@@ -31,12 +31,13 @@ from sklearn.model_selection import train_test_split
 from CI_ai_lib import (show_result, count_files_with_word, organize_files_by_labels,
                        create_folders_for_labels, split_files, make_predictions, plotloss,
                        get_image_dimensions, record_csv, delete_random_files,
-                       get_experiment_number, generate_experiment_id)
+                       get_experiment_number, generate_experiment_id, equilibrate_folders)
 
 #import our models
 from Models.model_simple import create_model_simple  
 from Models.model_medium import create_model_medium
-from Models.model_complex import create_model_complex  
+from Models.model_complex import create_model_complex 
+from Models.model_Xception_s import create_model_Xception_small
 
 
 #---------------------------------------
@@ -52,17 +53,17 @@ initial_directory   = 'Dataset/train'   #Where are initially the data
 # Définir les valeurs que vous souhaitez tester pour chaque paramètre
 img_height_values   = [150]       # Exemple de différentes hauteurs d'image
 img_width_values    = [150]        # Exemple de différentes largeurs d'image
-batch_size_values   = [32]        #[64, 32, 16]    # Exemple de différentes tailles de lot
+batch_size_values   = [15, 32, 64]        #[64, 32, 15]    # Exemple de différentes tailles de lot
 epochs_values       = [2]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
 learning_rate_values= [1e-4]   #[1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
 
 
 optimizer_values = ['adam'] #['adam', 'sgd', 'rmsprop']  # Exemple de différents optimiseurs
-percentage_to_delete_dog_values = [0]#[0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
-percentage_to_delete_cat_values = [0]#[0, 25, 50, 75]      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
-splitting_values = [0.7]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
+percentage_to_delete_dog_values = [0] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
+percentage_to_delete_cat_values = [0] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
+splitting_values = [0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
 
-model_values = [create_model_simple(), create_model_medium(), create_model_complex()] # 
+model_values = [create_model_simple(), create_model_medium(), create_model_complex(), create_model_Xception_small()] # 
 
 # Utilisez product pour créer toutes les combinaisons possibles de paramètres
 param_combinations = list(product(img_height_values, img_width_values, batch_size_values, epochs_values,
@@ -85,14 +86,14 @@ for params in param_combinations:
         id_generated = generate_experiment_id()
         experiment_id = str(experiment_number)+str(id_generated)
         print("experiment id: ",experiment_id)
-        final_directory     = 'Experiment2/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
+        final_directory     = 'Experiment1/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
         
         #Get the number of combinaisons
         num_combinations = len(list(param_combinations)) # Comptez le nombre de combinaisons
         print(f"Nombre de combinaisons de paramètres : {num_combinations}")# Affichez le nombre de combinaisons
         print("combination:",param_combinations[actual_combinaison] )# to print all the combinaisons
         
-        # Show what is which model is it
+        # Show which model is it
         if model == model_values[0]: 
             print("Model: Model Simple") 
             model_name = 'Experiment1_Model_Simple'
@@ -102,6 +103,9 @@ for params in param_combinations:
         if model == model_values[2]: 
             print("Model: Model Complex") 
             model_name = 'Experiment1_Model_Complex'
+        if model == model_values[3]: 
+            print("Model: Model model_Xception_small") 
+            model_name = 'Experiment1_model_Xception_small'
         
         # ------------------------------- FUNCTIONS -----------------------------
 
@@ -154,7 +158,12 @@ for params in param_combinations:
         print("number of dog images in dog folder:", len(os.listdir(os.path.join(final_directory, "dog"))))
         print("number of cat images in cat folder:", len(os.listdir(os.path.join(final_directory, "cat"))))
 
-        # 3 - Reduce the number of images in the Dataset (or not) 
+
+        # 3 equilibriaite the number of labels images
+        equilibrate_folders(os.path.join(final_directory, "dog"), os.path.join(final_directory, "cat")) # Check if we have the same amount of dog images and cat images
+
+
+        # 4 - Reduce the number of images in the Dataset (or not) 
         delete_random_files(folder_path = os.path.join(final_directory, "dog"), percentage_to_delete = percentage_to_delete_dog)
         delete_random_files(folder_path = os.path.join(final_directory, "cat"), percentage_to_delete = percentage_to_delete_cat)
         nbr_dog = len(os.listdir(os.path.join(final_directory, "dog")))
@@ -162,7 +171,7 @@ for params in param_combinations:
         print("number of dog images in dog folder after dataset reduction:", nbr_dog)
         print("number of cat images in cat folder after dataset reduction:", nbr_cat)
 
-        # 4 - Split the training_set and the validation_set for each label (here dog and cats)
+        # 5 - Split the training_set and the validation_set for each label (here dog and cats)
         split_files(source_directory = os.path.join(final_directory, "dog"), destination_directory_1 = os.path.join(final_directory, "Training_set/dog"), destination_directory_2 = os.path.join(final_directory, "Validation_set/dog"), pourcentage = splitting)
         split_files(source_directory = os.path.join(final_directory, "cat"), destination_directory_1 = os.path.join(final_directory, "Training_set/cat"), destination_directory_2 = os.path.join(final_directory, "Validation_set/cat"), pourcentage = splitting)
 
@@ -252,8 +261,8 @@ for params in param_combinations:
 
         # Callback initialization
         #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
-        #earlystop = EarlyStopping(patience = 5)
-        #learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
+        earlystop = EarlyStopping(patience = 5)
+        learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
         #tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
 
         history = model.fit(
@@ -261,7 +270,7 @@ for params in param_combinations:
             epochs=EPOCHS,
             batch_size=BATCH_SIZE,
         #    verbose="auto",
-        #    callbacks = [earlystop,learning_rate_reduction],
+            callbacks = [earlystop,learning_rate_reduction],
         #    validation_split=0.0,
             validation_data=validation_generator,
         #    shuffle=True,
@@ -273,7 +282,7 @@ for params in param_combinations:
         #    validation_batch_size=None,
         #    validation_freq=1,
         #    max_queue_size=10,
-        #    workers = 10,
+        #    workers = 4,
         #    use_multiprocessing=True,
         )
 
@@ -333,6 +342,16 @@ for params in param_combinations:
         # Show correlation graph between all the parameters and the accuracy
         # plot images where the code gets wrong (show_false_prediction)
         # add remarks
+        report_name = "experiment_n°"+experiment_id+"_Report.md"
+        report = open(os.path.join(final_directory, report_name), "a")
+        report.writelines("Experiment:{experiment_id}",experiment_id) 
+        report.writelines("Experiment number:{experiment_number}",experiment_number) 
+        report.writelines("Combinaison studied:*{param_combinations[actual_combinaison]}*",param_combinations[actual_combinaison])
+        report.writelines("![model_plot](model_plot.png)")
+        report.writelines("![train_val_acc_plot](train_val_acc_plot.png)")
+        report.writelines("![training_plot](training_plot.png)")
+
+        report.close()
 
         # Function to create
         #def visualize_validation_results(?):
