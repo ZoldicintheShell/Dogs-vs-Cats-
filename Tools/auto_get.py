@@ -1,69 +1,87 @@
+######
+# AUTOGET WITH DATA CLEANING
+######
+
 import os
 import shutil
 import tensorflow as tf
 import pathlib
 
-# Dataset URL
-dataset_url = "https://download.microsoft.com/download/3/E/1/3E1C3F21-ECDB-4869-8368-6DEBA77B919F/kagglecatsanddogs_5340.zip"
+# Define a function to download and extract the dataset
+def download_and_extract_dataset(dataset_url, destination_dir):
+    archive = tf.keras.utils.get_file(fname="./kagglecatsanddogs_5340.zip", origin=dataset_url, extract=True, cache_dir=destination_dir)
+    return pathlib.Path(archive).with_suffix('')
 
-# Get the current directory
-current_directory = pathlib.Path.cwd()
+# Define a function to remove corrupted images from a directory
+def remove_corrupted_images(directory):
+    num_skipped = 0
+    for folder_name in ("Cat", "Dog"):
+        folder_path = os.path.join(directory, folder_name)
+        for fname in os.listdir(folder_path):
+            fpath = os.path.join(folder_path, fname)
+            try:
+                fobj = open(fpath, "rb")
+                is_jfif = tf.compat.as_bytes("JFIF") in fobj.peek(10)
+            finally:
+                fobj.close()
 
-# Use a relative path to save the file in the current directory
-archive = tf.keras.utils.get_file(fname="./kagglecatsanddogs_5340.zip", origin=dataset_url, extract=True, cache_dir=current_directory)
+            if not is_jfif:
+                num_skipped += 1
+                os.remove(fpath)
 
-# Get the directory path by removing the file extension
-data_dir = pathlib.Path(archive).with_suffix('')
-print("The downloaded folder is located at:", data_dir)
+    print("Deleted %d images" % num_skipped)
 
-#-------------------- DATA FOLDERS ARCHITECTURE
+# Define a function to rename files by adding folder names as prefixes
+def rename_files_with_folder_prefix(directory):
+    for folder in os.listdir(directory):
+        folder_path = os.path.join(directory, folder)
 
-# Chemin vers le dossier "datasets"
-datasets_dir = "datasets/PetImages"
+        if os.path.isdir(folder_path):
+            for file in os.listdir(folder_path):
+                source_path = os.path.join(folder_path, file)
 
-# Parcourir les dossiers dans "datasets"
-for dossier in os.listdir(datasets_dir):
-    dossier_complet = os.path.join(datasets_dir, dossier)
-    
-    # Vérifier si l'élément est un dossier
-    if os.path.isdir(dossier_complet):
-        # Parcourir les fichiers dans le dossier
-        for fichier in os.listdir(dossier_complet):
-            chemin_source = os.path.join(dossier_complet, fichier)
-            
-            # Vérifier si l'élément est un fichier
-            if os.path.isfile(chemin_source):
-                # Créer le nouveau nom en ajoutant le nom du dossier en préfixe en minuscules
-                nouveau_nom = f"{dossier.lower()}.{fichier.lower()}"
-                chemin_destination = os.path.join(dossier_complet, nouveau_nom)
-                
-                # Renommer le fichier
-                os.rename(chemin_source, chemin_destination)
-                print(f"Renommage de {fichier} en {nouveau_nom}")
+                if os.path.isfile(source_path):
+                    new_name = f"{folder.lower()}.{file.lower()}"
+                    destination_path = os.path.join(folder_path, new_name)
 
-# Rename the "datasets" folder to "initial_dataset"
-if os.path.exists("datasets"):
-    os.rename("datasets", "initial_dataset")
+                    os.rename(source_path, destination_path)
+                    print(f"Renaming of {file} in {new_name}")
 
-# Create the "Dataset/train" folder if it doesn't exist
-train_dir = "Dataset/train"
-os.makedirs(train_dir, exist_ok=True)
+# Define a function to organize the dataset into a training directory
+def organize_dataset_for_training(initial_dataset_dir, train_dir):
+    os.rename(initial_dataset_dir, "initial_dataset")
+    os.makedirs(train_dir, exist_ok=True)
 
-# Path to the "initial_dataset/PetImages/Cat" and "initial_dataset/PetImages/Dog" folders
-cat_source_dir = "initial_dataset/PetImages/Cat"
-dog_source_dir = "initial_dataset/PetImages/Dog"
+    cat_source_dir = "initial_dataset/PetImages/Cat"
+    dog_source_dir = "initial_dataset/PetImages/Dog"
 
-# Copy files from "initial_dataset/PetImages/Cat" to "Dataset/train"
-for filename in os.listdir(cat_source_dir):
-    if filename.endswith(".jpg"):
-        shutil.copy(os.path.join(cat_source_dir, filename), os.path.join(train_dir, filename))
+    for source_dir in [cat_source_dir, dog_source_dir]:
+        for filename in os.listdir(source_dir):
+            if filename.endswith(".jpg"):
+                shutil.copy(os.path.join(source_dir, filename), os.path.join(train_dir, filename))
 
-# Copy files from "initial_dataset/PetImages/Dog" to "Dataset/train"
-for filename in os.listdir(dog_source_dir):
-    if filename.endswith(".jpg"):
-        shutil.copy(os.path.join(dog_source_dir, filename), os.path.join(train_dir, filename))
+    print("Operation completed: The 'initial_dataset' folder has been renamed, and the files have been copied to 'Dataset/train'.")
 
-print("Operation completed: The 'initial_dataset' folder has been renamed, and the files have been copied to 'Dataset/train'.")
+if __name__ == "__main__":
+    # Dataset URL
+    dataset_url = "https://download.microsoft.com/download/3/E/1/3E1C3F21-ECDB-4869-8368-6DEBA77B919F/kagglecatsanddogs_5340.zip"
 
-# Move "test_set" into "Dataset" folder
-shutil.move('Test_set', 'Dataset')
+    # Get the current directory
+    current_directory = pathlib.Path.cwd()
+
+    # Download and extract the dataset
+    data_dir = download_and_extract_dataset(dataset_url, current_directory)
+    print("The downloaded folder is located at:", data_dir)
+
+    # Remove corrupted images
+    remove_corrupted_images(os.path.join("datasets", "PetImages"))
+    print("#========== DATASET WELL CLEANED")
+
+    # Rename files by adding folder names as prefixes
+    rename_files_with_folder_prefix(os.path.join("datasets", "PetImages"))
+
+    # Organize the dataset for training
+    organize_dataset_for_training("datasets", "Dataset/train")
+
+    # Move "test_set" into "Dataset" folder
+    shutil.move('Test_set', 'Dataset')
