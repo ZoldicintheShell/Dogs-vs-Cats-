@@ -19,6 +19,7 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
 from itertools import product
 #from tensorflow.keras import layers, models
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
@@ -40,6 +41,9 @@ from Models.model_complex import create_model_complex
 from Models.model_Xception_s import create_model_Xception_small
 
 
+
+
+
 #---------------------------------------
 #       META PARAMETERS
 #---------------------------------------
@@ -53,14 +57,14 @@ initial_directory   = 'Dataset/train'   #Where are initially the data
 # Définir les valeurs que vous souhaitez tester pour chaque paramètre
 img_height_values   = [150]       # Exemple de différentes hauteurs d'image
 img_width_values    = [150]        # Exemple de différentes largeurs d'image
-batch_size_values   = [15, 32, 64]        #[64, 32, 15]    # Exemple de différentes tailles de lot
-epochs_values       = [2]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
+batch_size_values   = [64] #[128, 64, 32, 15]    # Exemple de différentes tailles de lot
+epochs_values       = [30]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
 learning_rate_values= [1e-4]   #[1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
 
 
 optimizer_values = ['adam'] #['adam', 'sgd', 'rmsprop']  # Exemple de différents optimiseurs
-percentage_to_delete_dog_values = [0] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
-percentage_to_delete_cat_values = [0] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
+percentage_to_delete_dog_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
+percentage_to_delete_cat_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
 splitting_values = [0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
 
 model_values = [create_model_simple(), create_model_medium(), create_model_complex(), create_model_Xception_small()] # 
@@ -108,6 +112,9 @@ for params in param_combinations:
             model_name = 'Experiment1_model_Xception_small'
         
         # ------------------------------- FUNCTIONS -----------------------------
+
+
+
 
 
         # ------------------------------- CODE -----------------------------
@@ -217,6 +224,20 @@ for params in param_combinations:
         print("number of images in the Validation_set:", nb_validation_images)
 
 
+        #plot_images_from_generator(train_generator, num_images=9)
+
+        """
+        plt.figure(figsize=(10, 10))
+        for images, labels in train_generator.take(1):
+            for i in range(9):
+                ax = plt.subplot(3, 3, i + 1)
+                plt.imshow(images[i].numpy().astype("uint8"))
+                plt.title(int(labels[i]))
+                plt.axis("off")
+        plt.savefig('your_image_filename.png')
+        """
+
+
         #---------------------------------------
         # STEP 6 : MODEL ARCHITECTURE DESIGN
         #---------------------------------------
@@ -262,7 +283,7 @@ for params in param_combinations:
         # Callback initialization
         #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
         earlystop = EarlyStopping(patience = 5)
-        learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
+        #learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
         #tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
 
         history = model.fit(
@@ -270,7 +291,7 @@ for params in param_combinations:
             epochs=EPOCHS,
             batch_size=BATCH_SIZE,
         #    verbose="auto",
-            callbacks = [earlystop,learning_rate_reduction],
+            callbacks = [earlystop], #,learning_rate_reduction
         #    validation_split=0.0,
             validation_data=validation_generator,
         #    shuffle=True,
@@ -344,14 +365,20 @@ for params in param_combinations:
         # add remarks
         report_name = "experiment_n°"+experiment_id+"_Report.md"
         report = open(os.path.join(final_directory, report_name), "a")
-        report.writelines("Experiment:{experiment_id}",experiment_id) 
-        report.writelines("Experiment number:{experiment_number}",experiment_number) 
-        report.writelines("Combinaison studied:*{param_combinations[actual_combinaison]}*",param_combinations[actual_combinaison])
-        report.writelines("![model_plot](model_plot.png)")
-        report.writelines("![train_val_acc_plot](train_val_acc_plot.png)")
-        report.writelines("![training_plot](training_plot.png)")
-
+        report.writelines(experiment_id) 
+        report.writelines("\n") 
+        #report.writelines("Experiment number:{experiment_number}",experiment_number) 
+        #report.writelines("Combinaison studied:*{param_combinations[actual_combinaison]}*",param_combinations[actual_combinaison])
+        report.writelines(f"\nDimension minimale en largeur (width) : {min_width}")
+        report.writelines("\n![model_plot](model_plot.png)")
+        #report.writelines("![train_val_acc_plot](train_val_acc_plot.png)")
+        report.writelines("\n![Training plot|200]("+experiment_id+"/training_plot.png \"Training Plot\")")
+        report.writelines("</br>") 
         report.close()
+
+        #Export Report as pdf
+        mew_command = "python3 mew-main/md_to_pdf.py mew-main/css/style1.css Experiment1/"+experiment_id+"/experiment_n°"+experiment_id+"_Report.md"
+        subprocess.call(mew_command, shell=True)
 
         # Function to create
         #def visualize_validation_results(?):
