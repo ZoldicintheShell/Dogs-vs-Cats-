@@ -1,0 +1,93 @@
+/*web site reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@page */
+
+/*-------------------------PAGINATION-------------------------*/
+    @font-face {
+        font-family: "rough Typewriter";
+        src: url("Fonts/rough_typewriter/rough_typewriter.otf") format("truetype");
+    }
+
+    @page {
+    size: A4;
+    /*background-image: url("Background/background_git.png");*/
+    background-image: url("https://cdn.discordapp.com/attachments/1060933781239889951/1146796660618436639/background_2.png");
+    background-size: 100% 100%;
+    margin: 0cm;
+    background-repeat: no-repeat;    
+    padding-top: 2cm;
+    padding-bottom: 4.5cm;
+    padding-right: 1.5cm;
+    padding-left: 1.5cm;
+    <page-break-before: always;
+    page-break-after: always;
+
+
+/*    @top-right{
+        content: "Page " counter(page) " of " counter(pages);
+    }
+
+*/  
+
+
+    @bottom-right {
+        content: counter(page);
+        color:red;
+        font-size: 100pt;
+        position: fixed;
+        bottom: 30px;
+        /*top: 200pt;*/  /* Adjust in points */
+        /*left: 250pt;*/ /* Adjust in points */
+    } 
+    
+    }
+
+    h1 {
+        /* <---- HEADER 1 ---->
+        major title; Project title
+        */
+
+        font-family: "ImpactLabel";
+        src: url("Fonts/Impact_Label.ttf") format('truetype');
+        font-size: 20pt;
+        font-style: normal;         /* Ex:  normal, italic*/
+        font-weight: ;              /* Ex:  bold */
+        line-height: ; 
+        padding: ;                  /* Ex: padding: 25px 50px 75px;*/
+        color: ;                    /* Ex: white */
+        background: ;               /* Ex: #292827 */
+    }
+    body {
+        font-family: 'Courier New', monospace;
+        /*font-family: "rough Typewriter", monospace;*/
+        font-size: 12pt;
+        padding: 0;
+        margin: 0;
+    }
+    header, footer {
+        width: 100%;
+        text-align: center;
+        position: running(header);
+    }
+    header {
+        font-size: 20px;
+        padding-top: 20px;
+    }
+    footer {
+        font-size: 20px;
+        padding-bottom: 20px;
+    }
+
+
+    .logo img {
+    width: 100px; /* Remplacez par la largeur souhaitée */
+    height: 100px; /* Remplacez par la hauteur souhaitée */
+    display: block;
+    margin: auto;
+    }
+
+    .illustration img {
+    width: 300px; /* Remplacez par la largeur souhaitée */
+    height: 200px; /* Remplacez par la hauteur souhaitée */
+    display: block;
+    margin: auto;
+    }
+

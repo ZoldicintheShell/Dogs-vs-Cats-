@@ -33,14 +33,14 @@ from CI_ai_lib import (show_result, count_files_with_word, organize_files_by_lab
                        create_folders_for_labels, split_files, make_predictions, plotloss,
                        get_image_dimensions, record_csv, delete_random_files,
                        get_experiment_number, generate_experiment_id, equilibrate_folders)
+# import mew project
+from Tools.mew.md_to_pdf import mew_md_to_pdf
 
 #import our models
 from Models.model_simple import create_model_simple  
 from Models.model_medium import create_model_medium
 from Models.model_complex import create_model_complex 
 from Models.model_Xception_s import create_model_Xception_small
-
-
 
 
 
@@ -377,8 +377,7 @@ for params in param_combinations:
         report.close()
 
         #Export Report as pdf
-        mew_command = "python3 mew-main/md_to_pdf.py mew-main/css/style1.css Experiment1/"+experiment_id+"/experiment_n°"+experiment_id+"_Report.md"
-        subprocess.call(mew_command, shell=True)
+        mew_md_to_pdf("Experiment1/"+experiment_id+"/experiment_n°"+experiment_id+"_Report.md", 'Tools/mew/css/style1.css', "Experiment1/"+experiment_id+"/experiment_n°"+experiment_id+"_Report.pdf")
 
         # Function to create
         #def visualize_validation_results(?):
