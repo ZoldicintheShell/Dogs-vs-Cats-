@@ -27,11 +27,11 @@ Install tensorflow-metal plugin
 ```python
 python -m pip install tensorflow-metal
 ```
-#### Create environment
+## Create environment
 `conda create -n competitors_env python=3.11` </br>
 `conda activate competitors_env`</br>
 
-#### Install requirements
+## Install requirements
 `conda install pip` *(if you don't have pip already)* </br>
 `pip install -r requirements.txt`</br>
 
