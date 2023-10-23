@@ -14,6 +14,7 @@
 import os
 import shutil
 import re
+import sys
 import random
 import tensorflow as tf
 import pandas as pd
@@ -67,7 +68,7 @@ percentage_to_delete_dog_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple d
 percentage_to_delete_cat_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
 splitting_values = [0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
 
-model_values = [create_model_simple(), create_model_medium(), create_model_complex(), create_model_Xception_small()] # 
+model_values = [create_model_simple()] # 
 
 # Utilisez product pour créer toutes les combinaisons possibles de paramètres
 param_combinations = list(product(img_height_values, img_width_values, batch_size_values, epochs_values,
@@ -75,9 +76,10 @@ param_combinations = list(product(img_height_values, img_width_values, batch_siz
                                    percentage_to_delete_cat_values, splitting_values, model_values))
 actual_combinaison = 0
 
+_i = 1
 # Boucle sur toutes les combinaisons de paramètres
 for params in param_combinations:
-    
+    # if _i == 2: break
     try:
         img_height, img_width, BATCH_SIZE, EPOCHS, LEARNING_RATE, optimizer, \
         percentage_to_delete_dog, percentage_to_delete_cat, splitting, model = params
@@ -98,19 +100,7 @@ for params in param_combinations:
         print("combination:",param_combinations[actual_combinaison] )# to print all the combinaisons
         
         # Show which model is it
-        if model == model_values[0]: 
-            print("Model: Model Simple") 
-            model_name = 'Experiment1_Model_Simple'
-        if model == model_values[1]: 
-            print("Model: Model Medium") 
-            model_name = 'Experiment1_Model_Medium'
-        if model == model_values[2]: 
-            print("Model: Model Complex") 
-            model_name = 'Experiment1_Model_Complex'
-        if model == model_values[3]: 
-            print("Model: Model model_Xception_small") 
-            model_name = 'Experiment1_model_Xception_small'
-        
+        model_name = str(model)
         # ------------------------------- FUNCTIONS -----------------------------
 
 
@@ -285,6 +275,10 @@ for params in param_combinations:
         earlystop = EarlyStopping(patience = 5)
         #learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
         #tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
+#
+        # EPOCHS = 1
+        # BATCH_SIZE = 500
+#
 
         history = model.fit(
             train_generator, #x, Y
@@ -337,7 +331,7 @@ for params in param_combinations:
         # STEP 11 : MODEL PREDICTION
         #---------------------------------------
 
-        make_predictions(model, test_directory = 'Dataset/Test_set', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
+        # make_predictions(model, test_directory = 'Dataset/Test_set', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
 
 
         #---------------------------------------
@@ -364,16 +358,26 @@ for params in param_combinations:
         # plot images where the code gets wrong (show_false_prediction)
         # add remarks
         report_name = "experiment_n°"+experiment_id+"_Report.md"
-        report = open(os.path.join(final_directory, report_name), "a")
-        report.writelines(experiment_id) 
-        report.writelines("\n") 
-        #report.writelines("Experiment number:{experiment_number}",experiment_number) 
-        #report.writelines("Combinaison studied:*{param_combinations[actual_combinaison]}*",param_combinations[actual_combinaison])
-        report.writelines(f"\nDimension minimale en largeur (width) : {min_width}")
-        report.writelines("\n![model_plot](model_plot.png)")
-        #report.writelines("![train_val_acc_plot](train_val_acc_plot.png)")
-        report.writelines("\n![Training plot|200]("+experiment_id+"/training_plot.png \"Training Plot\")")
-        report.writelines("</br>") 
+        report = open(os.path.join(final_directory, report_name), "w")
+        report.writelines(f"## Experiment number:\t{experiment_id}\n\n") 
+        report.writelines(f"Combination studied:\t*{param_combinations[actual_combinaison]}*\n\n")
+        report.writelines(f"Min dimensions:\t{min_width}x{min_height}\n\n")
+        report.writelines("number of dog in training set:\t{}\n\n".format(len(os.listdir(os.path.join(final_directory, "Training_set/dog")))))
+        report.writelines("number of cat in training set:\t{}\n\n".format(len(os.listdir(os.path.join(final_directory, "Training_set/cat")))))
+        report.writelines("number of dog in validation set:\t{}\n\n".format(len(os.listdir(os.path.join(final_directory, "Validation_set/dog")))))
+        report.writelines("number of cat in validation set:\t{}\n\n".format(len(os.listdir(os.path.join(final_directory, "Validation_set/cat")))))
+        report.writelines(f"number of training features:\t{len(os.listdir('Dataset/train'))}\n\n")
+        report.writelines(f"number of testing features:\t{len(os.listdir('Dataset/Test_set'))}\n\n")
+        report.writelines(f"Loss on validation set: {evaluation[0]}\n\n")
+        report.writelines(f"Accuracy on validation set: {evaluation[1]}\n\n")
+        model_plot_img = './' + os.path.join(final_directory, 'model_plot.png')
+        train_val_acc_plot_img = './' + os.path.join(final_directory, 'train_val_acc_plot.png')
+        train_plot_img = './' + os.path.join(final_directory, 'training_plot.png')
+        # print('>>', model_plot_img, train_val_acc_plot_img, train_plot_img)
+        report.writelines(f"![model_plot]({model_plot_img})\n\n")
+# Issue with these last to images
+        report.writelines(f"![train_val_acc_plot]({train_val_acc_plot_img})\n\n")
+        report.writelines(f"![training_plot]({train_plot_img})\n\n")
         report.close()
 
         #Export Report as pdf
@@ -406,8 +410,7 @@ for params in param_combinations:
         with open(os.path.join(final_directory, 'combinaison.md'), "w") as md_file:            
             # Écrire la première combinaison uniquement
             md_file.write(str(param_combinations[actual_combinaison]))
-
-
+        _i += 1
 
     except Exception as e:
         print(f"Error encountered for parameters: {params}")
@@ -424,7 +427,6 @@ for params in param_combinations:
     shutil.rmtree(os.path.join(final_directory, "cat"))
     shutil.rmtree(os.path.join(final_directory, "Training_set"))
     shutil.rmtree(os.path.join(final_directory, "Validation_set"))
-
 """
 # ========== DATA AUGMENTATION
 # Préparation des données avec augmentation des images (data augmentation)
