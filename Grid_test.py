@@ -51,15 +51,15 @@ from Models.model_Xception_s import create_model_Xception_small
 labels              = ['dog', 'cat'] #labels that where are working on (becarefull, be sure that their is no error or if it unsupervised)
 base_directory      = '.' #path of the super folder
 initial_directory   = 'Dataset/train'   #Where are initially the data
-#final_directory     = 'Experiment1' #where do we want to create the folders containing our set for train and validation
+experiment_number_name     = 'Experiment2/' #where do we want to create the folders containing our set for train and validation
 
 
 
 # Définir les valeurs que vous souhaitez tester pour chaque paramètre
 img_height_values   = [150]       # Exemple de différentes hauteurs d'image
 img_width_values    = [150]        # Exemple de différentes largeurs d'image
-batch_size_values   = [64] #[128, 64, 32, 15]    # Exemple de différentes tailles de lot
-epochs_values       = [30]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
+batch_size_values   = [128] #[128, 64, 32, 15]    # Exemple de différentes tailles de lot
+epochs_values       = [10]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
 learning_rate_values= [1e-4]   #[1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
 
 
@@ -68,7 +68,7 @@ percentage_to_delete_dog_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple d
 percentage_to_delete_cat_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
 splitting_values = [0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
 
-model_values = [create_model_simple()] # 
+model_values = [create_model_simple()] # , create_model_medium(), create_model_complex(), create_model_Xception_small()
 
 # Utilisez product pour créer toutes les combinaisons possibles de paramètres
 param_combinations = list(product(img_height_values, img_width_values, batch_size_values, epochs_values,
@@ -76,10 +76,8 @@ param_combinations = list(product(img_height_values, img_width_values, batch_siz
                                    percentage_to_delete_cat_values, splitting_values, model_values))
 actual_combinaison = 0
 
-_i = 1
 # Boucle sur toutes les combinaisons de paramètres
 for params in param_combinations:
-    # if _i == 2: break
     try:
         img_height, img_width, BATCH_SIZE, EPOCHS, LEARNING_RATE, optimizer, \
         percentage_to_delete_dog, percentage_to_delete_cat, splitting, model = params
@@ -92,7 +90,7 @@ for params in param_combinations:
         id_generated = generate_experiment_id()
         experiment_id = str(experiment_number)+str(id_generated)
         print("experiment id: ",experiment_id)
-        final_directory     = 'Experiment1/'+str(experiment_id) #where do we want to create the folders containing our set for train and validation
+        final_directory     = str(experiment_number_name)+str(experiment_id) #where do we want to create the folders containing our set for train and validation
         
         #Get the number of combinaisons
         num_combinations = len(list(param_combinations)) # Comptez le nombre de combinaisons
@@ -272,20 +270,17 @@ for params in param_combinations:
 
         # Callback initialization
         #This callback will adjust the learning rate  when there is no improvement in the loss for two consecutive epochs. No need for GRID or NEAT search 
-        earlystop = EarlyStopping(patience = 5)
+        #earlystop = EarlyStopping(patience = 5)
         #learning_rate_reduction = ReduceLROnPlateau(monitor = 'val_acc',patience = 4 ,verbose = 1, factor = 0.5, min_lr = 0.00001) 
         #tf.keras.callbacks.CSVLogger('train_log.csv', separator=",", append=False)
-#
-        # EPOCHS = 1
-        # BATCH_SIZE = 500
-#
+
 
         history = model.fit(
             train_generator, #x, Y
             epochs=EPOCHS,
             batch_size=BATCH_SIZE,
         #    verbose="auto",
-            callbacks = [earlystop], #,learning_rate_reduction
+        #    callbacks = [earlystop], #,learning_rate_reduction
         #    validation_split=0.0,
             validation_data=validation_generator,
         #    shuffle=True,
@@ -331,7 +326,7 @@ for params in param_combinations:
         # STEP 11 : MODEL PREDICTION
         #---------------------------------------
 
-        # make_predictions(model, test_directory = 'Dataset/Test_set', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
+        make_predictions(model, test_directory = 'Dataset/Test_set', output_csv = os.path.join(final_directory, 'predictions.csv'),img_height = img_height, img_width = img_width) 
 
 
         #---------------------------------------
@@ -410,15 +405,13 @@ for params in param_combinations:
         with open(os.path.join(final_directory, 'combinaison.md'), "w") as md_file:            
             # Écrire la première combinaison uniquement
             md_file.write(str(param_combinations[actual_combinaison]))
-        _i += 1
+
 
     except Exception as e:
         print(f"Error encountered for parameters: {params}")
         print(f"Error details: {str(e)}")
         continue  # Passe à la combinaison de paramètres suivante en cas d'erreur
     
-    actual_combinaison = actual_combinaison + 1
-
     #---------------------------------------
     # STEP 13 : CLEAN MEMORY
     #---------------------------------------
@@ -427,6 +420,10 @@ for params in param_combinations:
     shutil.rmtree(os.path.join(final_directory, "cat"))
     shutil.rmtree(os.path.join(final_directory, "Training_set"))
     shutil.rmtree(os.path.join(final_directory, "Validation_set"))
+
+    actual_combinaison = actual_combinaison + 1
+
+
 """
 # ========== DATA AUGMENTATION
 # Préparation des données avec augmentation des images (data augmentation)
