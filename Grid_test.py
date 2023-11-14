@@ -58,17 +58,17 @@ experiment_number_name     = 'Experiment2/' #where do we want to create the fold
 # Définir les valeurs que vous souhaitez tester pour chaque paramètre
 img_height_values   = [150]       # Exemple de différentes hauteurs d'image
 img_width_values    = [150]        # Exemple de différentes largeurs d'image
-batch_size_values   = [128] #[128, 64, 32, 15]    # Exemple de différentes tailles de lot
-epochs_values       = [10]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
+batch_size_values   = [256] #[128, 64, 32, 15]    # Exemple de différentes tailles de lot
+epochs_values       = [2]            #[2, 10, 20, 30]     #2,    # Exemple de différentes valeurs d'époque
 learning_rate_values= [1e-4]   #[1e-4, 1e-3, 1e-2]  # Exemple de différentes taux d'apprentissage
 
 
 optimizer_values = ['adam'] #['adam', 'sgd', 'rmsprop']  # Exemple de différents optimiseurs
-percentage_to_delete_dog_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
-percentage_to_delete_cat_values = [0, 25, 50, 75] #, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
+percentage_to_delete_dog_values = [0, 25, 50, 75] #0 , 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chiens
+percentage_to_delete_cat_values = [0, 25, 50, 75] #0, 25, 50, 75      # Exemple de différentes valeurs de pourcentage à supprimer pour les chats
 splitting_values = [0.8]  # Exemple de différentes valeurs pour l'hyperparamètre "splitting"
 
-model_values = [create_model_simple()] # , create_model_medium(), create_model_complex(), create_model_Xception_small()
+model_values = [create_model_simple(), create_model_medium()] # , create_model_complex(), create_model_Xception_small()
 
 # Utilisez product pour créer toutes les combinaisons possibles de paramètres
 param_combinations = list(product(img_height_values, img_width_values, batch_size_values, epochs_values,
@@ -97,8 +97,22 @@ for params in param_combinations:
         print(f"Nombre de combinaisons de paramètres : {num_combinations}")# Affichez le nombre de combinaisons
         print("combination:",param_combinations[actual_combinaison] )# to print all the combinaisons
         
-        # Show which model is it
-        model_name = str(model)
+        # Show what is which model is it
+        if model == model_values[0]: 
+            print("Model: Model Simple") 
+            model_name = 'Experiment1_Model_Simple'
+        
+        if model == model_values[1]: 
+            print("Model: Model Medium") 
+            model_name = 'Experiment1_Model_Medium'
+        """ 💡 to adjust with the models we are using    
+        if model == model_values[2]: 
+            print("Model: Model Complex") 
+            model_name = 'Experiment1_Model_Complex'
+        if model == model_values[3]: 
+            print("Model: Model Complex") 
+            model_name = 'Experiment1_Model_Xception_small'
+        """    
         # ------------------------------- FUNCTIONS -----------------------------
 
 
@@ -376,7 +390,7 @@ for params in param_combinations:
         report.close()
 
         #Export Report as pdf
-        mew_md_to_pdf("Experiment1/"+experiment_id+"/experiment_n°"+experiment_id+"_Report.md", 'Tools/mew/css/style1.css', "Experiment1/"+experiment_id+"/experiment_n°"+experiment_id+"_Report.pdf")
+        mew_md_to_pdf(str(experiment_number_name)+experiment_id+"/experiment_n°"+experiment_id+"_Report.md", 'Tools/mew/css/style1.css', str(experiment_number_name)+experiment_id+"/experiment_n°"+experiment_id+"_Report.pdf")
 
         # Function to create
         #def visualize_validation_results(?):
